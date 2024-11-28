@@ -22,7 +22,11 @@ ostream& operator<<(ostream& os, square_t square) { // for pretty printing a squ
     char color;
     switch (square.piece.color) {
     case Color::NONE:
-        color = ' ';
+        if ((square.x + square.y)%2 == 0) {
+            color = 'O';
+        } else {
+            color = ' ';
+        }
         break;
     case Color::WHITE:
         color = 'w';
@@ -52,7 +56,11 @@ ostream& operator<<(ostream& os, square_t square) { // for pretty printing a squ
         type = 'K';
         break;
     default:
-        type = ' ';
+        if ((square.x + square.y)%2 == 0) {
+            type = 'O';
+        } else {
+            type = ' ';
+        }
     }
     return os << color << type;
 }

@@ -4,7 +4,7 @@
 
 LDFLAGS=
 LIBS=
-C=g++ # Added because I (Simon) have a very painful issue with my Ubuntu, I need to run "make C=g++-10" or I can't compile
+C=g++ # Simon : Because of my faulty Ubuntu I need to run "make C=g++-10" or I can't compile, but it should be unchanged for you.
 CXXFLAGS=-Wall -Werror -g -std=c++20 -I/Library/Developer/CommandLineTools/usr/include/c++/v1
 BIN=BlueHerring
 SRCS=main.cpp

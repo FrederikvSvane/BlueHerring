@@ -25,6 +25,5 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
         cout << move << endl;
     }
     */
-
     return 0;
 }
