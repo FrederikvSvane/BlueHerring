@@ -1,7 +1,7 @@
 #include "board_t.hpp"
 #include "file_util.hpp"
 
-int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_example.txt
+int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_example.txt 
 {
     if (argc != 5) {
         printf("Wrong input size!, %i", argc);
