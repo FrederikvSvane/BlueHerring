@@ -1,0 +1,11 @@
+{
+  "files.associations": {
+    "*.erd": "json",
+    "*.vuerd": "json",
+    "*.config": "xml",
+    "*.py": "python",
+    "iosfwd": "cpp",
+    "*.tcc": "cpp",
+    "fstream": "cpp"
+  }
+}
