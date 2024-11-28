@@ -1,11 +1,13 @@
 {
   "files.associations": {
+    ".fantomasignore": "ignore",
     "*.erd": "json",
     "*.vuerd": "json",
     "*.config": "xml",
     "*.py": "python",
     "iosfwd": "cpp",
     "*.tcc": "cpp",
-    "fstream": "cpp"
+    "fstream": "cpp",
+    "vector": "cpp"
   }
 }
