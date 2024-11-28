@@ -35,7 +35,7 @@ Make
 
 # Authors
 
-Charbonneau, Simon (email)
+Charbonneau, Simon (simon.charbonneau@polytechnique.edu)
 
 Krause, Antonia Gerlach (email)
 
