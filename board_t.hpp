@@ -40,7 +40,7 @@ ostream& operator<<(ostream& os, square_t square) { // for pretty printing a squ
         type = 'R';
         break;
     case PieceType::KNIGHT:
-        type = 'K';
+        type = 'N';
         break;
     case PieceType::BISHOP:
         type = 'B';
