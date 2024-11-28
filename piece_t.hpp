@@ -5,10 +5,29 @@
 
 using namespace std;
 
-struct piece_t {
-    bool color; // 0 stands for black, 1 stands for white
+enum class PieceType {
+    EMPTY,
+    PAWN,
+    KNIGHT,
+    BISHOP,
+    ROOK,
+    QUEEN,
+    KING
+};
 
-    piece_t(bool colorval) : color(colorval) {}
+enum class Color {
+    NONE,
+    WHITE,
+    BLACK
+};
+
+struct piece_t {
+    PieceType type;
+    Color color;
+
+    piece_t() : type(PieceType::EMPTY), color(Color::NONE) {} // default constructor
+    piece_t(PieceType typeval) : type(typeval), color(Color::NONE) {}
+    piece_t(Color colorval) : type(PieceType::EMPTY), color(colorval) {}
 
     virtual vector<array<int, 2>> get_moves(int x, int y) {
         return vector<array<int, 2>>();
@@ -16,67 +35,88 @@ struct piece_t {
 };
 
 struct pawn_t : piece_t {
-    using piece_t::piece_t; // inherit constructor
+    pawn_t(Color colorval) : piece_t(colorval) {
+        type = PieceType::PAWN;
+    }
 
     vector<array<int, 2>> get_moves(int x, int y) override {
         vector<array<int, 2>> moves;
-        int direction = this->color ? 1 : -1; // if the piece is white it moves up, otherwise down
+        int direction = (color == Color::WHITE) ? 1 : -1;
 
-        if (y == 1 && direction == 1) { // first move for white
+        if (y == 1 && color == Color::WHITE) {
             moves.push_back({x, 2});
             moves.push_back({x, 3});
-            return moves;
-        } else if (y == 6 && direction == -1) { // first move for black
-            moves.push_back({x, 6});
+        } else if (y == 6 && color == Color::BLACK) {
+            moves.push_back({x, 4});
             moves.push_back({x, 5});
-            return moves;
         } else {
             moves.push_back({x, y + direction});
-            return moves;
-        }
-    }
-};
-
-struct rook_t : piece_t {
-    using piece_t::piece_t;
-
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
-
-        for (int xi = 0; xi < 8; xi++) { // move horizontally
-            if (xi != x) {
-                moves.push_back({xi, y});
-            }
-        }
-        for (int yi = 0; yi < 8; yi++) { // move vertically
-            if (yi != y) {
-                moves.push_back({x, yi});
-            }
         }
         return moves;
     }
 };
 
-struct bishop_t : piece_t {
-    using piece_t::piece_t;
+struct rook_t : piece_t {
+    rook_t(Color colorval) : piece_t(colorval) {
+        type = PieceType::ROOK;
+    }
 
     vector<array<int, 2>> get_moves(int x, int y) override {
         vector<array<int, 2>> moves;
-        // FILL IN
+        for (int xi = 0; xi < 8; xi++) {
+            if (xi != x)
+                moves.push_back({xi, y});
+        }
+        for (int yi = 0; yi < 8; yi++) {
+            if (yi != y)
+                moves.push_back({x, yi});
+        }
         return moves;
     }
 };
 
 struct knight_t : piece_t {
-    using piece_t::piece_t;
+    knight_t(Color colorval) : piece_t(colorval) {
+        type = PieceType::KNIGHT;
+    }
+
+    vector<array<int, 2>> get_moves(int x, int y) override {
+        vector<array<int, 2>> moves;
+        return moves;
+    }
+};
+
+struct bishop_t : piece_t {
+    bishop_t(Color colorval) : piece_t(colorval) {
+        type = PieceType::BISHOP;
+    }
+
+    vector<array<int, 2>> get_moves(int x, int y) override {
+        vector<array<int, 2>> moves;
+        return moves;
+    }
 };
 
 struct queen_t : piece_t {
-    using piece_t::piece_t;
+    queen_t(Color colorval) : piece_t(colorval) {
+        type = PieceType::QUEEN;
+    }
+
+    vector<array<int, 2>> get_moves(int x, int y) override {
+        vector<array<int, 2>> moves;
+        return moves;
+    }
 };
 
 struct king_t : piece_t {
-    using piece_t::piece_t;
+    king_t(Color colorval) : piece_t(colorval) {
+        type = PieceType::KING;
+    }
+
+    vector<array<int, 2>> get_moves(int x, int y) override {
+        vector<array<int, 2>> moves;
+        return moves;
+    }
 };
 
 #endif
