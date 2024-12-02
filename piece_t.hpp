@@ -83,6 +83,15 @@ struct knight_t : piece_t {
 
     vector<array<int, 2>> get_moves(int x, int y) override {
         vector<array<int, 2>> moves;
+        vector<std::array<int, 2>> offsets = {
+        {x + 1, y + 2}, {x - 1, y + 2}, {x + 1, y - 2}, {x - 1, y - 2},
+        {x + 2, y + 1}, {x - 2, y + 1}, {x + 2, y - 1}, {x - 2, y - 1}
+        };
+        for (const auto& [xi, yi] : offsets) {
+            if(0 <= xi <= 7 && 0 <= yi <= 7){
+                moves.push_back({xi, yi});
+            };
+        }
         return moves;
     }
 };
@@ -116,6 +125,15 @@ struct king_t : piece_t {
 
     vector<array<int, 2>> get_moves(int x, int y) override {
         vector<array<int, 2>> moves;
+        vector<std::array<int, 2>> offsets = {
+            {x + 1, y + 1}, {x + 1, y}, {x + 1, y - 1}, {x, y - 1}, 
+            {x - 1, y - 1}, {x - 1, y}, {x - 1, y + 1}, {x, y + 1}
+        };
+        for (const auto& [xi, yi] : offsets) {
+            if(0 <= xi <= 7 && 0 <= yi <= 7){
+                moves.push_back({xi, yi});
+            };
+        }
         return moves;
     }
 };
