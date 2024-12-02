@@ -45,9 +45,11 @@ struct pawn_t : piece_t {
         int direction = (color == Color::WHITE) ? 1 : -1;
 
         if (y == 1 && color == Color::WHITE) {
+            //If it's the first move, we can move one or two squares
             moves.push_back({x, 2});
             moves.push_back({x, 3});
         } else if (y == 6 && color == Color::BLACK) {
+            //If it's the first move, we can move one or two squares
             moves.push_back({x, 4});
             moves.push_back({x, 5});
         } else {
@@ -88,7 +90,7 @@ struct knight_t : piece_t {
         {x + 2, y + 1}, {x - 2, y + 1}, {x + 2, y - 1}, {x - 2, y - 1}
         };
         for (const auto& [xi, yi] : offsets) {
-            if(0 <= xi <= 7 && 0 <= yi <= 7){
+            if(0 <= xi && xi <= 7 && 0 <= yi && yi <= 7){
                 moves.push_back({xi, yi});
             };
         }
@@ -103,6 +105,19 @@ struct bishop_t : piece_t {
 
     vector<array<int, 2>> get_moves(int x, int y) override {
         vector<array<int, 2>> moves;
+        vector<std::array<int, 2>> diagonals = { {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+        for(const auto& [dx, dy] : diagonals) {
+            for(int i = 1; i <= 7; i++){
+                int xi = x + dx*i;
+                int yi = y + dy*i;
+                if(0 <= xi && xi <= 7 && 0 <= yi && yi <= 7){
+                    moves.push_back({xi, yi});
+                }
+                else{
+                    break;
+                }
+            }
+        }
         return moves;
     }
 };
@@ -130,7 +145,7 @@ struct king_t : piece_t {
             {x - 1, y - 1}, {x - 1, y}, {x - 1, y + 1}, {x, y + 1}
         };
         for (const auto& [xi, yi] : offsets) {
-            if(0 <= xi <= 7 && 0 <= yi <= 7){
+            if(0 <= xi && xi <= 7 && 0 <= yi  && yi <= 7){
                 moves.push_back({xi, yi});
             };
         }
