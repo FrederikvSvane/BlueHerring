@@ -27,6 +27,14 @@ struct board_t {
     vector<square_t> line(move_t move) {
         vector<square_t> squares;
 
+        bool up = move.from_y < move.to_y;
+        bool right = move.from_x < move.to_x;
+
+        // x and y increment based on the direction of the line
+        int x_dir = 2*right-1;
+        int y_dir = 2*up-1;
+
+
         if (move.from_x == move.to_x) { // Vertical line
             for (int j = min(move.from_y, move.to_y)+1; j <= max(move.from_y, move.to_y); j++) {
                 squares.push_back(at(move.from_x, j));
@@ -39,12 +47,8 @@ struct board_t {
             return squares;
         }
 
-        bool up = move.from_y < move.to_y;
-        bool right = move.from_x < move.to_x;
 
-        // x and y increment based on the direction of the line
-        int x_dir = 2*right-1;
-        int y_dir = 2*up-1;
+        // Diagonals
 
         printf("up,right (%i,%i)\n", x_dir, y_dir);
 
@@ -111,7 +115,8 @@ struct board_t {
         cout << endl;
         cout << "  a b c d e f g h" << endl;
         for (int y = 7; y >= 0; y--) {
-            cout << y + 1 << " ";
+            // cout << y + 1 << " ";
+            cout << y << " ";
             for (int x = 0; x < 8; x++) {
                 cout << at(x, y) << " ";
             }
@@ -140,6 +145,7 @@ struct board_t {
         // Not jumping over piece (if not knight)
         if (at(move.from_x, move.from_y).piece.type != PieceType::KNIGHT) {
             // Get line of squares [from,to]
+            //vector<square_t> line_squares = line();
         }
 
         // Move does not result in discovered check

@@ -33,7 +33,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
 
     board.pretty_print_board();
 
-    move_t m = {1,7,3,7,PieceType::BISHOP, false};
+    move_t m = {7,0,0,0,PieceType::BISHOP, false};
     printf("%i, %i\n", m.from_x,m.from_y);
     printf("%i, %i\n", m.to_x,m.to_y);
 
