@@ -31,29 +31,27 @@ struct board_t {
         bool right = move.from_x < move.to_x;
 
         // x and y increment based on the direction of the line
-        int x_dir = 2*right-1;
-        int y_dir = 2*up-1;
-
+        int x_dir = 2 * right - 1;
+        int y_dir = 2 * up - 1;
 
         if (move.from_x == move.to_x) { // Vertical line
-            for (int j = min(move.from_y, move.to_y)+1; j <= max(move.from_y, move.to_y); j++) {
+            for (int j = min(move.from_y, move.to_y) + 1; j <= max(move.from_y, move.to_y); j++) {
                 squares.push_back(at(move.from_x, j));
             }
             return squares;
         } else if (move.from_y == move.to_y) { // Horizontal line
-            for (int i = min(move.from_x, move.to_x)+1; i <= max(move.from_x, move.to_x); i++) {
+            for (int i = min(move.from_x, move.to_x) + 1; i <= max(move.from_x, move.to_x); i++) {
                 squares.push_back(at(i, move.from_y));
             }
             return squares;
         }
 
-
         // Diagonals
 
         printf("up,right (%i,%i)\n", x_dir, y_dir);
 
-        for (int i = 1; i <= abs(move.to_x-move.from_x); i++) {
-            squares.push_back(at(move.from_x+x_dir*i,move.from_y+y_dir*i));
+        for (int i = 1; i <= abs(move.to_x - move.from_x); i++) {
+            squares.push_back(at(move.from_x + x_dir * i, move.from_y + y_dir * i));
         }
 
         return squares;
@@ -72,8 +70,8 @@ struct board_t {
             for (int y = 0; y < 8; y++) {
 
                 // Initialize coordinates
-                at(x,y).x = x;
-                at(x,y).y = y;
+                at(x, y).x = x;
+                at(x, y).y = y;
 
                 // Initial board setup
                 if (y == 0 || y == 1) {
@@ -145,14 +143,14 @@ struct board_t {
         // Not jumping over piece (if not knight)
         if (at(move.from_x, move.from_y).piece.type != PieceType::KNIGHT) {
             // Get line of squares [from,to]
-            //vector<square_t> line_squares = line();
+            // vector<square_t> line_squares = line();
         }
 
         // Move does not result in discovered check
         return 1;
     }
 
-    class board_iterator_t {
+    class board_iterator_t { // to facilitate looping over the board, square by square, starting from the bottom left
         array<square_t, 64>& board;
         int x = 0;
         int y = 0;
@@ -173,7 +171,33 @@ struct board_t {
             return board[index(x, y)];
         }
 
-        bool operator!=(const board_iterator_t& other) {
+        bool operator!=(const board_iterator_t& other) const {
+            return x != other.x || y != other.y;
+        }
+    };
+
+    class const_board_iterator_t { // to facilitate looping over the board, without modifying anything
+        const array<square_t, 64>& board;
+        int x = 0;
+        int y = 0;
+
+      public:
+        const_board_iterator_t(const array<square_t, 64>& b, int startX = 0, int startY = 0)
+            : board(b), x(startX), y(startY) {}
+
+        const_board_iterator_t& operator++() {
+            if (++y >= 8) {
+                y = 0;
+                ++x;
+            }
+            return *this;
+        }
+
+        const square_t& operator*() const {
+            return board[index(x, y)];
+        }
+
+        bool operator!=(const const_board_iterator_t& other) const {
             return x != other.x || y != other.y;
         }
     };
@@ -181,6 +205,8 @@ struct board_t {
   public:
     board_iterator_t begin() { return board_iterator_t(board); }
     board_iterator_t end() { return board_iterator_t(board, 8, 0); }
+    const_board_iterator_t begin() const { return const_board_iterator_t(board); }
+    const_board_iterator_t end() const { return const_board_iterator_t(board, 8, 0); }
 };
 
 #endif
