@@ -26,10 +26,10 @@ Clone this repository to your machine
 Navigate to the directory and run the following commands:
 
 ```
-Make
+./build.sh
 ```
 ```
-./BlueHerring
+./BlueHerring -H input.txt -m output_example.txt
 ```
 
 
@@ -41,5 +41,5 @@ Krause, Antonia Gerlach (email)
 
 Losel (email)
 
-Svane, Frederik (email)
+Svane, Frederik (frederik.svane@polytechnique.edu)
 
