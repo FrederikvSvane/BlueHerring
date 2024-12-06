@@ -1,3 +1,4 @@
 BlueHerring
 *.o
 /build
+/.vscode
