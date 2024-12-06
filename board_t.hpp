@@ -149,6 +149,7 @@ struct board_t {
         }
 
         // Move does not result in discovered check
+        return 1;
     }
 
     class board_iterator_t {
