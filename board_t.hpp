@@ -24,6 +24,41 @@ struct board_t {
         return board[index(x, y)];
     }
 
+    vector<square_t> line(move_t move) {
+        vector<square_t> squares;
+
+        bool up = move.from_y < move.to_y;
+        bool right = move.from_x < move.to_x;
+
+        // x and y increment based on the direction of the line
+        int x_dir = 2*right-1;
+        int y_dir = 2*up-1;
+
+
+        if (move.from_x == move.to_x) { // Vertical line
+            for (int j = min(move.from_y, move.to_y)+1; j <= max(move.from_y, move.to_y); j++) {
+                squares.push_back(at(move.from_x, j));
+            }
+            return squares;
+        } else if (move.from_y == move.to_y) { // Horizontal line
+            for (int i = min(move.from_x, move.to_x)+1; i <= max(move.from_x, move.to_x); i++) {
+                squares.push_back(at(i, move.from_y));
+            }
+            return squares;
+        }
+
+
+        // Diagonals
+
+        printf("up,right (%i,%i)\n", x_dir, y_dir);
+
+        for (int i = 1; i <= abs(move.to_x-move.from_x); i++) {
+            squares.push_back(at(move.from_x+x_dir*i,move.from_y+y_dir*i));
+        }
+
+        return squares;
+    }
+
     board_t() {
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
@@ -35,6 +70,12 @@ struct board_t {
     void initialize_starting_board() {
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
+
+                // Initialize coordinates
+                at(x,y).x = x;
+                at(x,y).y = y;
+
+                // Initial board setup
                 if (y == 0 || y == 1) {
                     if (y == 1) {
                         at(x, y).piece = pawn_t(Color::WHITE);
@@ -74,7 +115,8 @@ struct board_t {
         cout << endl;
         cout << "  a b c d e f g h" << endl;
         for (int y = 7; y >= 0; y--) {
-            cout << y + 1 << " ";
+            // cout << y + 1 << " ";
+            cout << y << " ";
             for (int x = 0; x < 8; x++) {
                 cout << at(x, y) << " ";
             }
@@ -92,6 +134,21 @@ struct board_t {
         if (move.promotion_type != PieceType::EMPTY) {
             to_square.piece.type = move.promotion_type;
         }
+    }
+
+    int is_move_legal(const move_t& move) {
+        // Target does not contain a piece of the same color
+        if (at(move.to_x, move.to_y).piece.color == at(move.from_x, move.from_y).piece.color) {
+            return -1;
+        }
+
+        // Not jumping over piece (if not knight)
+        if (at(move.from_x, move.from_y).piece.type != PieceType::KNIGHT) {
+            // Get line of squares [from,to]
+            //vector<square_t> line_squares = line();
+        }
+
+        // Move does not result in discovered check
     }
 
     class board_iterator_t {
