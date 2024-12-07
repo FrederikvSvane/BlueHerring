@@ -30,32 +30,47 @@ struct board_t {
         bool up = move.from_y < move.to_y;
         bool right = move.from_x < move.to_x;
 
+        if (move.from_x == move.to_x) {
+            // Vertical line
+            if (move.from_y < move.to_y) {
+                // Vertical line going up
+                for (int j = move.from_y+1; j <= move.to_y; j++) {
+                    squares.push_back(at(move.from_x, j));
+                }
+                return squares;
+            }
+            else {
+                // Vertical line going down
+                for (int j = move.from_y-1; j >= move.to_y; j--) {
+                    squares.push_back(at(move.from_x, j));
+                }
+                return squares;
+            }
+        } else if (move.from_y == move.to_y) {
+            // Horizontal line
+            if (move.from_x < move.to_x) {
+                // Horizontal line going right
+                for (int i = move.from_x+1; i <= move.to_x; i++) {
+                    squares.push_back(at(i, move.from_y));
+                }
+                return squares;
+            }
+            else {
+                // Horizontal line going left
+                for (int i = move.from_x-1; i >= move.to_x; i--) {
+                    squares.push_back(at(i, move.from_y));
+                }
+                return squares;
+            }
+        }
+
         // x and y increment based on the direction of the line
         int x_dir = 2*right-1;
         int y_dir = 2*up-1;
-
-
-        if (move.from_x == move.to_x) { // Vertical line
-            for (int j = min(move.from_y, move.to_y)+1; j <= max(move.from_y, move.to_y); j++) {
-                squares.push_back(at(move.from_x, j));
-            }
-            return squares;
-        } else if (move.from_y == move.to_y) { // Horizontal line
-            for (int i = min(move.from_x, move.to_x)+1; i <= max(move.from_x, move.to_x); i++) {
-                squares.push_back(at(i, move.from_y));
-            }
-            return squares;
-        }
-
-
         // Diagonals
-
-        printf("up,right (%i,%i)\n", x_dir, y_dir);
-
         for (int i = 1; i <= abs(move.to_x-move.from_x); i++) {
             squares.push_back(at(move.from_x+x_dir*i,move.from_y+y_dir*i));
         }
-
         return squares;
     }
 
