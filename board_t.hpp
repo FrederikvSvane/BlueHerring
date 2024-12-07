@@ -257,6 +257,10 @@ struct board_t {
             return 0;
         }
         // Not revealing a check
+        make_move(move);
+        int is_checked = is_in_check(at(move.from_x, move.from_y).piece.color);
+        make_move(move_t{move.to_x, move.to_y, move.from_x, move.from_y, move.promotion_type, move.is_special});
+        return !is_checked;
     }
 
     class board_iterator_t {
