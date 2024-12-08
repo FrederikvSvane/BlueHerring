@@ -13,7 +13,7 @@ struct board_t {
     array<square_t, 64> board;
 
     static constexpr inline int index(int x, int y) {
-        return static_cast<int>(x + (y << 3));
+        return static_cast<int>(x + (y << 3)); // same as x + y*8 (but faster!)
     }
 
     square_t& at(int x, int y) {
