@@ -4,6 +4,9 @@ project(blueherring
   VERSION 1.0
   LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)  
+
 include_directories(.)
 
 # add_library(myLibExample Foo.cpp Foo.h)
