@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include "move_t.hpp"
 
 using namespace std;
 
@@ -30,30 +31,30 @@ struct piece_t {
     piece_t(PieceType typeval) : type(typeval), color(Color::NONE) {}
     piece_t(Color colorval) : type(PieceType::EMPTY), color(colorval) {}
 
-    virtual vector<array<int, 2>> get_moves(int x, int y) {
-        return vector<array<int, 2>>();
-    }
+    virtual vector<move_t> eval(int x, int y);
 };
 
 struct pawn_t : piece_t {
+    // STILL NEED TO IMPLEMENT THE PROMOTION MOVE
     pawn_t(Color colorval) : piece_t(colorval) {
         type = PieceType::PAWN;
     }
 
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
+    vector<move_t> eval(int x, int y) override {
+        vector<move_t> moves;
         int direction = (color == Color::WHITE) ? 1 : -1;
 
         if (y == 1 && color == Color::WHITE) {
             //If it's the first move, we can move one or two squares
-            moves.push_back({x, 2});
-            moves.push_back({x, 3});
+            moves.push_back(move_t {x, y, x, 2, PieceType::EMPTY, false});
+            moves.push_back(move_t {x, y, x, 3, PieceType::EMPTY, false});
         } else if (y == 6 && color == Color::BLACK) {
             //If it's the first move, we can move one or two squares
-            moves.push_back({x, 4});
-            moves.push_back({x, 5});
+            moves.push_back(move_t {x, y, x, 4, PieceType::EMPTY, false});
+            moves.push_back(move_t {x, y, x, 5, PieceType::EMPTY, false});
         } else {
-            moves.push_back({x, y + direction});
+            if(0 <= y + direction && y + direction < 8)
+            moves.push_back(move_t {x, y, x, y + direction, PieceType::EMPTY, false});
         }
         return moves;
     }
@@ -64,15 +65,17 @@ struct rook_t : piece_t {
         type = PieceType::ROOK;
     }
 
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
-        for (int xi = 0; xi < 8; xi++) {
-            if (xi != x)
-                moves.push_back({xi, y});
+    vector<move_t> eval(int x, int y) override {
+        vector<move_t> moves;
+        // horizontal moves
+        for (int to_x = 0; to_x < 8; to_x++) {
+            if (to_x != x)
+                moves.push_back(move_t {x, y, to_x, y, PieceType::EMPTY, false});
         }
-        for (int yi = 0; yi < 8; yi++) {
-            if (yi != y)
-                moves.push_back({x, yi});
+        //vertical moves
+        for (int to_y = 0; to_y < 8; to_y++) {
+            if (to_y != y)
+                moves.push_back(move_t {x, y, x, to_y, PieceType::EMPTY, false});
         }
         return moves;
     }
@@ -83,15 +86,15 @@ struct knight_t : piece_t {
         type = PieceType::KNIGHT;
     }
 
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
+    vector<move_t> eval(int x, int y) override {
+        vector<move_t> moves;
         vector<std::array<int, 2>> offsets = {
         {x + 1, y + 2}, {x - 1, y + 2}, {x + 1, y - 2}, {x - 1, y - 2},
         {x + 2, y + 1}, {x - 2, y + 1}, {x + 2, y - 1}, {x - 2, y - 1}
         };
-        for (const auto& [xi, yi] : offsets) {
-            if(0 <= xi && xi <= 7 && 0 <= yi && yi <= 7){
-                moves.push_back({xi, yi});
+        for (const auto& [to_x, to_y] : offsets) {
+            if(0 <= to_x && to_x <= 7 && 0 <= to_y && to_y <= 7){
+                moves.push_back(move_t {x, y, to_x, to_y, PieceType::EMPTY, false});
             };
         }
         return moves;
@@ -103,15 +106,15 @@ struct bishop_t : piece_t {
         type = PieceType::BISHOP;
     }
 
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
+    vector<move_t> eval(int x, int y) override {
+        vector<move_t> moves;
         vector<std::array<int, 2>> diagonals = { {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
         for(const auto& [dx, dy] : diagonals) {
             for(int i = 1; i <= 7; i++){
-                int xi = x + dx*i;
-                int yi = y + dy*i;
-                if(0 <= xi && xi <= 7 && 0 <= yi && yi <= 7){
-                    moves.push_back({xi, yi});
+                int to_x = x + dx*i;
+                int to_y = y + dy*i;
+                if(0 <= to_x && to_x <= 7 && 0 <= to_y && to_y <= 7){
+                    moves.push_back(move_t {x, y, to_x, to_y, PieceType::EMPTY, false});
                 }
                 else{
                     break;
@@ -127,8 +130,33 @@ struct queen_t : piece_t {
         type = PieceType::QUEEN;
     }
 
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
+    vector<move_t> eval(int x, int y) override {
+        vector<move_t> moves;
+        //horizontal moves
+        for (int to_x = 0; to_x < 8; to_x++) {
+            if (to_x != x)
+                moves.push_back(move_t {x, y, to_x, y, PieceType::EMPTY, false});
+        }
+        //vertical moves
+        for (int to_y = 0; to_y < 8; to_y++) {
+            if (to_y != y)
+                moves.push_back(move_t {x, y, x, to_y, PieceType::EMPTY, false});
+        }
+
+        //and now diagonals
+        vector<std::array<int, 2>> diagonals = { {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+        for(const auto& [dx, dy] : diagonals) {
+            for(int i = 1; i <= 7; i++){
+                int to_x = x + dx*i;
+                int to_y = y + dy*i;
+                if(0 <= to_x && to_x <= 7 && 0 <= to_y && to_y <= 7){
+                    moves.push_back(move_t {x, y, to_x, to_y, PieceType::EMPTY, false});
+                }
+                else{
+                    break;
+                }
+            }
+        }
         return moves;
     }
 };
@@ -138,15 +166,15 @@ struct king_t : piece_t {
         type = PieceType::KING;
     }
 
-    vector<array<int, 2>> get_moves(int x, int y) override {
-        vector<array<int, 2>> moves;
+    vector<move_t> eval(int x, int y) override {
+        vector<move_t> moves;
         vector<std::array<int, 2>> offsets = {
             {x + 1, y + 1}, {x + 1, y}, {x + 1, y - 1}, {x, y - 1}, 
             {x - 1, y - 1}, {x - 1, y}, {x - 1, y + 1}, {x, y + 1}
         };
-        for (const auto& [xi, yi] : offsets) {
-            if(0 <= xi && xi <= 7 && 0 <= yi  && yi <= 7){
-                moves.push_back({xi, yi});
+        for (const auto& [to_x, to_y] : offsets) {
+            if(0 <= to_x && to_x <= 7 && 0 <= to_y  && to_y <= 7){
+                moves.push_back(move_t {x, y, to_x, to_y, PieceType::EMPTY, false});
             };
         }
         return moves;
