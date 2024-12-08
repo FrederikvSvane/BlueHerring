@@ -6,48 +6,32 @@
 #include "square_t.hpp"
 #include <iostream>
 
-
 inline std::ostream& operator<<(std::ostream& os, square_t square) {
     if (square.piece.color == Color::NONE) {
         return os << ((square.x + square.y) % 2 == 0 ? "·" : "·");
     }
     if (square.piece.color == Color::WHITE) {
         switch (square.piece.type) {
-        case PieceType::KING:
-            return os << "\u265A";
-        case PieceType::QUEEN:
-            return os << "\u265B";
-        case PieceType::ROOK:
-            return os << "\u265C";
-        case PieceType::BISHOP:
-            return os << "\u265D";
-        case PieceType::KNIGHT:
-            return os << "\u265E";
-        case PieceType::PAWN:
-            return os << "\u265F";
-        default:
-            return os << " ";
+        case PieceType::KING: return os << "\u265A";
+        case PieceType::QUEEN: return os << "\u265B";
+        case PieceType::ROOK: return os << "\u265C";
+        case PieceType::BISHOP: return os << "\u265D";
+        case PieceType::KNIGHT: return os << "\u265E";
+        case PieceType::PAWN: return os << "\u265F";
+        default: return os << " ";
         }
     } else {
         switch (square.piece.type) {
-        case PieceType::KING:
-            return os << "\u2654";
-        case PieceType::QUEEN:
-            return os << "\u2655";
-        case PieceType::ROOK:
-            return os << "\u2656";
-        case PieceType::BISHOP:
-            return os << "\u2657";
-        case PieceType::KNIGHT:
-            return os << "\u2658";
-        case PieceType::PAWN:
-            return os << "\u2659";
-        default:
-            return os << " ";
+        case PieceType::KING: return os << "\u2654";
+        case PieceType::QUEEN: return os << "\u2655";
+        case PieceType::ROOK: return os << "\u2656";
+        case PieceType::BISHOP: return os << "\u2657";
+        case PieceType::KNIGHT: return os << "\u2658";
+        case PieceType::PAWN: return os << "\u2659";
+        default: return os << " ";
         }
     }
 }
-
 
 // The ASCII version of the above
 

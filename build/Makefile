@@ -123,24 +123,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named blueherring
+# Target rules for targets named BlueHerring
 
 # Build rule for target.
-blueherring: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 blueherring
-.PHONY : blueherring
+BlueHerring: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 BlueHerring
+.PHONY : BlueHerring
 
 # fast build rule for target.
-blueherring/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/build
-.PHONY : blueherring/fast
+BlueHerring/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/build
+.PHONY : BlueHerring/fast
 
 main.o: main.cpp.o
 .PHONY : main.o
 
 # target to build an object file
 main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -148,7 +148,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -156,7 +156,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -167,7 +167,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... blueherring"
+	@echo "... BlueHerring"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

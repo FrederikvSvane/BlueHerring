@@ -1,3 +1,3 @@
-/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles/blueherring.dir
+/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles/BlueHerring.dir
 /Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles/edit_cache.dir
 /Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles/rebuild_cache.dir

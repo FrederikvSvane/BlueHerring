@@ -63,11 +63,11 @@ CMAKE_BINARY_DIR = "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Se
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/blueherring.dir/all
+all: CMakeFiles/BlueHerring.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
-codegen: CMakeFiles/blueherring.dir/codegen
+codegen: CMakeFiles/BlueHerring.dir/codegen
 .PHONY : codegen
 
 # The main recursive "preinstall" target.
@@ -75,39 +75,39 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/blueherring.dir/clean
+clean: CMakeFiles/BlueHerring.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/blueherring.dir
+# Target rules for target CMakeFiles/BlueHerring.dir
 
 # All Build rule for target.
-CMakeFiles/blueherring.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles" --progress-num=1,2 "Built target blueherring"
-.PHONY : CMakeFiles/blueherring.dir/all
+CMakeFiles/BlueHerring.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles" --progress-num=1,2 "Built target BlueHerring"
+.PHONY : CMakeFiles/BlueHerring.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/blueherring.dir/rule: cmake_check_build_system
+CMakeFiles/BlueHerring.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles" 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/blueherring.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/BlueHerring.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles" 0
-.PHONY : CMakeFiles/blueherring.dir/rule
+.PHONY : CMakeFiles/BlueHerring.dir/rule
 
 # Convenience name for target.
-blueherring: CMakeFiles/blueherring.dir/rule
-.PHONY : blueherring
+BlueHerring: CMakeFiles/BlueHerring.dir/rule
+.PHONY : BlueHerring
 
 # codegen rule for target.
-CMakeFiles/blueherring.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/codegen
-.PHONY : CMakeFiles/blueherring.dir/codegen
+CMakeFiles/BlueHerring.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/codegen
+.PHONY : CMakeFiles/BlueHerring.dir/codegen
 
 # clean rule for target.
-CMakeFiles/blueherring.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blueherring.dir/build.make CMakeFiles/blueherring.dir/clean
-.PHONY : CMakeFiles/blueherring.dir/clean
+CMakeFiles/BlueHerring.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/BlueHerring.dir/build.make CMakeFiles/BlueHerring.dir/clean
+.PHONY : CMakeFiles/BlueHerring.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
