@@ -33,6 +33,8 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
 
     board.pretty_print_board();
 
+    cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY, 0}) << std::endl;
+
     string best_move; // the magnum opus
     best_move = "e3e4";
     write_move_to_output_file(&output_file_name, &best_move);

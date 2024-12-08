@@ -153,7 +153,8 @@ struct board_t {
                 case Color::BLACK:
                     attacked_by_pawn = {{{k_x+1, k_y-1}, {k_x-1, k_y-1}}};
                 default:
-                    return 2;
+                    cout << "there is no EMPTY-colored king" << std::endl;
+                    return false;
                 }
 
                 for (auto& [x, y] : attacked_by_pawn)
