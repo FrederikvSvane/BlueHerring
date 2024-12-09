@@ -983,4 +983,5 @@ CMakeFiles/BlueHerring.dir/main.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/c++/v1/__filesystem/path_iterator.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/c++/v1/__filesystem/u8path.h \
-  /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/moves.hpp
+  /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/moves.hpp \
+  /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/tests.hpp

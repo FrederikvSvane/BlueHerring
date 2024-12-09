@@ -7,19 +7,35 @@
 #include <array>
 #include <vector>
 
+namespace moves {
+
 piece_t make_move(board_t& board, const move_t& move) {
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
 
-    // Save captured piece before overwriting
-    piece_t captured_piece = to_square.piece;
+    // Infer whether the move is an en-passant or a castling move
+    bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
+    bool is_castling;
 
-    to_square.piece   = from_square.piece;
-    from_square.piece = piece_t{};
+    // Save captured piece before overwriting
+    piece_t captured_piece;
+
+    if (is_en_passant) {
+        captured_piece                         = (from_square.piece.color == Color::WHITE) ? piece_t{PieceType::PAWN, Color::BLACK} : piece_t{PieceType::PAWN, Color::WHITE};
+        board.at(move.to_x, move.from_y).piece = piece_t{};
+    } else {
+        captured_piece = to_square.piece;
+    }
+
+    // TODO: handle castling
+
+    to_square.piece = from_square.piece;
 
     if (move.promotion_type != PieceType::EMPTY) {
-        to_square.piece.type = move.promotion_type;
+        to_square.piece.type  = move.promotion_type;
     }
+
+    from_square.piece = piece_t{};
 
     return captured_piece;
 }
@@ -27,6 +43,10 @@ piece_t make_move(board_t& board, const move_t& move) {
 void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece) {
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
+
+    // Infer whether the move is an en-passant or a castling move
+    bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
+    bool is_castling;
 
     // Move the piece back
     from_square.piece = to_square.piece;
@@ -36,8 +56,17 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
         from_square.piece.type = PieceType::PAWN;
     }
 
+    // Clear the destination square
+    to_square.piece = piece_t{};
+
     // Restore the captured piece
-    to_square.piece = captured_piece;
+    if (is_en_passant) {
+        board.at(move.to_x, move.from_y).piece = captured_piece;
+    } else {
+        to_square.piece = captured_piece;
+    }
+
+    // TODO: handle castling
 }
 
 vector<square_t> line(const board_t& board, const move_t& move) {
@@ -131,10 +160,10 @@ bool is_in_check(const board_t& board, Color color) {
     }
 
     // check diagonals for bishops and queens
-    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, 7 - k_y), k_y + min(7 - k_x, 7 - k_y), PieceType::EMPTY, 0});
-    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 7 - k_y), k_y + min(k_x, 7 - k_y), PieceType::EMPTY, 0});
-    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, k_y), k_y - min(7 - k_x, k_y), PieceType::EMPTY, 0});
-    const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY, 0});
+    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, 7 - k_y), k_y + min(7 - k_x, 7 - k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 7 - k_y), k_y + min(k_x, 7 - k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, k_y), k_y - min(7 - k_x, k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY});
 
     for (const auto& diagonal : array<vector<square_t>, 4>{diagonal_ur, diagonal_ul, diagonal_dr, diagonal_dl}) {
         if (is_check_from_line(board, diagonal, color, true)) {
@@ -143,10 +172,10 @@ bool is_in_check(const board_t& board, Color color) {
     }
 
     // check straight lines for rooks and queens
-    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 7, PieceType::EMPTY, 0});
-    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 7, k_y, PieceType::EMPTY, 0});
-    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, 0, PieceType::EMPTY, 0});
-    const vector<square_t> line_l = line(board, move_t{k_x, k_y, 0, k_y, PieceType::EMPTY, 0});
+    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 7, PieceType::EMPTY});
+    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 7, k_y, PieceType::EMPTY});
+    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, 0, PieceType::EMPTY});
+    const vector<square_t> line_l = line(board, move_t{k_x, k_y, 0, k_y, PieceType::EMPTY});
 
     for (const auto& straight_line : array<vector<square_t>, 4>{line_u, line_r, line_d, line_l}) {
         if (is_check_from_line(board, straight_line, color, false)) {
@@ -203,15 +232,15 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
             (own_color == Color::BLACK && y + direction == 0)) {
             for (PieceType promotion : {PieceType::QUEEN, PieceType::ROOK,
                                         PieceType::BISHOP, PieceType::KNIGHT}) {
-                moves.push_back(move_t{x, y, x, y + direction, promotion, false});
+                moves.push_back(move_t{x, y, x, y + direction, promotion});
             }
         } else {
-            moves.push_back(move_t{x, y, x, y + direction, PieceType::EMPTY, false});
+            moves.push_back(move_t{x, y, x, y + direction, PieceType::EMPTY});
 
             // first move - two squares (only if not promoting)
             if ((own_color == Color::WHITE && y == 1) || (own_color == Color::BLACK && y == 6)) {
                 if (board.at(x, y + 2 * direction).piece.type == PieceType::EMPTY) {
-                    moves.push_back(move_t{x, y, x, y + 2 * direction, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, x, y + 2 * direction, PieceType::EMPTY});
                 }
             }
         }
@@ -227,16 +256,29 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
                     (own_color == Color::BLACK && y + direction == 0)) {
                     for (PieceType promotion : {PieceType::QUEEN, PieceType::ROOK,
                                                 PieceType::BISHOP, PieceType::KNIGHT}) {
-                        moves.push_back(move_t{x, y, x + dx, y + direction, promotion, false});
+                        moves.push_back(move_t{x, y, x + dx, y + direction, promotion});
                     }
                 } else {
-                    moves.push_back(move_t{x, y, x + dx, y + direction, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, x + dx, y + direction, PieceType::EMPTY});
                 }
             }
         }
     }
 
-    // TODO: en passant
+    if (board.history.size() > 1) {
+        move_t previous_move = board.history.back();
+        if ((own_color == Color::WHITE && y == 4) || (own_color == Color::BLACK && y == 3)) {
+            // the to-be-capturing pawn has advanced exactly three ranks
+            for (int dx : {-1, 1}) {
+                if (board.in_board(x + dx, y) && board.at(x + dx, y).piece.type == PieceType::PAWN && board.at(x + dx, y).piece.color != own_color) {
+                    if (previous_move.from_x == x + dx && previous_move.from_y == y + 2 * direction && previous_move.to_x == x + dx && previous_move.to_y == y) {
+                        // the to-be-captured pawn has moved two squares in one move, landing right next to the to-be-capturing pawn, in the previous move
+                        moves.push_back(move_t{x, y, x + dx, y + direction, PieceType::EMPTY});
+                    }
+                }
+            }
+        }
+    }
 
     return moves;
 }
@@ -260,10 +302,10 @@ vector<move_t> get_rook_moves(const board_t& board, int x, int y) {
             const square_t& target = board.at(current_x, current_y);
 
             if (target.piece.type == PieceType::EMPTY) {
-                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
             } else {
                 if (target.piece.color != own_color) {
-                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
                 }
                 break; // stop after encountering any piece
             }
@@ -285,7 +327,7 @@ vector<move_t> get_knight_moves(const board_t& board, int x, int y) {
 
     for (const auto& [to_x, to_y] : offsets) {
         if (board.in_board(to_x, to_y) && board.at(to_x, to_y).piece.color != own_color) {
-            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY, false});
+            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY});
         }
     }
 
@@ -311,10 +353,10 @@ vector<move_t> get_bishop_moves(const board_t& board, int x, int y) {
             const square_t& target = board.at(current_x, current_y);
 
             if (target.piece.type == PieceType::EMPTY) {
-                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
             } else {
                 if (target.piece.color != own_color) {
-                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
                 }
                 break; // stop after encountering any piece
             }
@@ -343,7 +385,7 @@ vector<move_t> get_king_moves(const board_t& board, int x, int y) {
 
     for (const auto& [to_x, to_y] : offsets) {
         if (board.in_board(to_x, to_y) && board.at(to_x, to_y).piece.color != own_color) {
-            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY, false});
+            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY});
         }
     }
 
@@ -394,13 +436,9 @@ vector<move_t> generate_all_moves_for_color(board_t& board, Color color) {
     vector<move_t> all_moves;
 
     for (const auto& square : board) {
-        // skip empty squares and pieces of the wrong color
-        if (square.piece.type == PieceType::EMPTY || square.piece.color != color) {
-            continue;
-        }
-
-        // bounds checking
-        if (!board.in_board(square.x, square.y)) {
+        if (square.piece.type == PieceType::EMPTY ||
+            square.piece.color != color ||
+            !board.in_board(square.x, square.y)) {
             continue;
         }
 
@@ -408,62 +446,16 @@ vector<move_t> generate_all_moves_for_color(board_t& board, Color color) {
 
         for (const auto& move : piece_moves) {
             piece_t captured = make_move(board, move);
-            bool is_valid    = !is_in_check(board, color);
-            undo_move(board, move, captured);
-
-            if (is_valid) {
+            if (!is_in_check(board, color)) {
                 all_moves.push_back(move);
             }
+            undo_move(board, move, captured);
         }
     }
 
     return all_moves;
 }
 
-uint64_t perft(board_t& board, int depth, Color color) {
-    if (depth == 0)
-        return 1;
-
-    uint64_t nodes       = 0;
-    vector<move_t> moves = generate_all_moves_for_color(board, color);
-
-    for (const move_t& move : moves) {
-        piece_t captured_piece = make_move(board, move);
-        nodes += perft(board, depth - 1, color == Color::WHITE ? Color::BLACK : Color::WHITE);
-        undo_move(board, move, captured_piece);
-    }
-
-    return nodes;
-}
-
-void test_perft() {
-    board_t board;
-    board.initialize_starting_board();
-
-    // hardcoded expected values for perft from starting position
-    const vector<uint64_t> expected_white = {
-        1,       // depth 0
-        20,      // depth 1
-        400,     // depth 2
-        8902,    // depth 3
-        197281,  // depth 4
-        4865609, // depth 5
-    };
-
-    const int max_depth = expected_white.size() - 1;
-
-    for (int depth = 0; depth <= max_depth; depth++) {
-        uint64_t result = perft(board, depth, Color::WHITE);
-        cout << "Testing perft for white with depth of " << depth
-             << ". Result: " << result
-             << ", Expected: " << expected_white[depth];
-
-        if (result == expected_white[depth]) {
-            cout << " ✓" << endl;
-        } else {
-            cout << " ✗" << endl;
-        }
-    }
-}
+} // namespace moves
 
 #endif

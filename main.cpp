@@ -4,6 +4,7 @@
 #include "move_t.hpp"
 #include <locale>
 #include "moves.hpp"
+#include "tests.hpp"
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_example.txt
 {
@@ -15,11 +16,11 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     string input_file_name  = argv[2];
     string output_file_name = argv[4];
 
-    board_t board{};
-    board.initialize_starting_board();
-    board.pretty_print_board();
+    // board_t board{};
+    // board.initialize_starting_board();
+    // board.pretty_print_board();
 
-    test_perft();
+    tests::run_test_suite();
 
 
 

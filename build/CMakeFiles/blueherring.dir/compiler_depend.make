@@ -985,7 +985,8 @@ CMakeFiles/BlueHerring.dir/main.cpp.o: /Users/frederik/OneDrive\ -\ Danmarks\ Te
   /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/moves.hpp \
   /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/operators_util.hpp \
   /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/piece_t.hpp \
-  /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/square_t.hpp
+  /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/square_t.hpp \
+  /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/tests.hpp
 
 
 /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/operators_util.hpp:
@@ -2387,6 +2388,8 @@ CMakeFiles/BlueHerring.dir/main.cpp.o: /Users/frederik/OneDrive\ -\ Danmarks\ Te
 /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/xlocale/_ctype.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/c++/v1/__algorithm/fill.h:
+
+/Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/tests.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk/usr/include/_wctype.h:
 

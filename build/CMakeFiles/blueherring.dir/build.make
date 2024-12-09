@@ -76,15 +76,15 @@ CMakeFiles/BlueHerring.dir/main.cpp.o: CMakeFiles/BlueHerring.dir/flags.make
 CMakeFiles/BlueHerring.dir/main.cpp.o: /Users/frederik/OneDrive\ -\ Danmarks\ Tekniske\ Universitet/5Semester/blueherring/main.cpp
 CMakeFiles/BlueHerring.dir/main.cpp.o: CMakeFiles/BlueHerring.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/BlueHerring.dir/main.cpp.o"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/BlueHerring.dir/main.cpp.o -MF CMakeFiles/BlueHerring.dir/main.cpp.o.d -o CMakeFiles/BlueHerring.dir/main.cpp.o -c "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/main.cpp"
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/BlueHerring.dir/main.cpp.o -MF CMakeFiles/BlueHerring.dir/main.cpp.o.d -o CMakeFiles/BlueHerring.dir/main.cpp.o -c "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/main.cpp"
 
 CMakeFiles/BlueHerring.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/BlueHerring.dir/main.cpp.i"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/main.cpp" > CMakeFiles/BlueHerring.dir/main.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/main.cpp" > CMakeFiles/BlueHerring.dir/main.cpp.i
 
 CMakeFiles/BlueHerring.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/BlueHerring.dir/main.cpp.s"
-	/Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/main.cpp" -o CMakeFiles/BlueHerring.dir/main.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/Users/frederik/OneDrive - Danmarks Tekniske Universitet/5Semester/blueherring/main.cpp" -o CMakeFiles/BlueHerring.dir/main.cpp.s
 
 # Object files for target BlueHerring
 BlueHerring_OBJECTS = \
