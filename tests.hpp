@@ -9,9 +9,11 @@ struct perft_test_case {
     string fen;
     int max_depth;
     vector<uint64_t> expected_nodes;
+    bool single_color_scenario;
 };
 
-uint64_t perft(board_t& board, int depth, Color color) {
+
+uint64_t perft(board_t& board, int depth, Color color, bool single_color_only) {
     if (depth == 0)
         return 1;
 
@@ -20,24 +22,26 @@ uint64_t perft(board_t& board, int depth, Color color) {
 
     for (const move_t& move : moves) {
         piece_t captured_piece = moves::make_move(board, move);
-        nodes += perft(board, depth - 1, color); // Keep the same color!
+        // Only switch color if not single_color_only
+        nodes += perft(board, depth - 1, single_color_only ? color : (color == Color::WHITE ? Color::BLACK : Color::WHITE), single_color_only);
         moves::undo_move(board, move, captured_piece);
     }
 
     return nodes;
 }
 
+
 void run_test_suite() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     vector<perft_test_case> test_cases = {
-        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", 4, {1, 20, 400, 8902, 197281}},
-        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", 3, {1, 48, 2039, 97862}},
-        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8", 4, {1, 14, 191, 2812, 43238}},
-        {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1", 4, {1, 6, 264, 9467, 422333}},
-        {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R", 4, {1, 44, 1486, 62379, 2103487}},
-        {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1", 4, {1, 46, 2079, 89890, 3894594}},
-        {"8/P/8/8/8/8/8/8", 2, {1, 4, 44}}
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", 4, {1, 20, 400, 8902, 197281}, false},
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", 3, {1, 48, 2039, 97862}, false},
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8", 4, {1, 14, 191, 2812, 43238}, false},
+        {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1", 4, {1, 6, 264, 9467, 422333}, false},
+        {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R", 4, {1, 44, 1486, 62379, 2103487}, false},
+        {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1", 4, {1, 46, 2079, 89890, 3894594}, false},
+        {"8/P/8/8/8/8/8/8", 2, {1, 4, 44}, true}
         // All taken from https://www.chessprogramming.org/Perft_Results
     };
 
@@ -51,7 +55,7 @@ void run_test_suite() {
 
         bool test_passed = true;
         for (int depth = 0; depth <= test.max_depth; depth++) {
-            uint64_t result = perft(board, depth, Color::WHITE);
+            uint64_t result = perft(board, depth, Color::WHITE, test.single_color_scenario);
             bool passed     = result == test.expected_nodes[depth];
             test_passed &= passed;
 
