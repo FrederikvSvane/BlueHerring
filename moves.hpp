@@ -12,7 +12,16 @@ piece_t make_move(board_t& board, const move_t& move) {
     square_t& to_square   = board.at(move.to_x, move.to_y);
 
     // Save captured piece before overwriting
-    piece_t captured_piece = to_square.piece;
+    piece_t captured_piece;
+
+    if (move.is_special && from_square.piece.type == PieceType::PAWN) {
+        // En passant
+        captured_piece = (from_square.piece.color == Color::WHITE) ? piece_t{PieceType::PAWN, Color::BLACK} : piece_t{PieceType::PAWN, Color::WHITE};
+        board.at(move.to_x, move.from_y).piece = piece_t{};
+    }
+    else {
+        captured_piece = to_square.piece;
+    }
 
     to_square.piece   = from_square.piece;
     from_square.piece = piece_t{};
@@ -37,7 +46,13 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
     }
 
     // Restore the captured piece
-    to_square.piece = captured_piece;
+    if (move.is_special && from_square.piece.type == PieceType::PAWN) {
+        // En passant
+        board.at(move.to_x, move.from_y).piece = captured_piece;
+    }
+    else {
+        to_square.piece = captured_piece;
+    }
 }
 
 vector<square_t> line(const board_t& board, const move_t& move) {
@@ -236,7 +251,20 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
         }
     }
 
-    // TODO: en passant
+    if (board.history.size() > 1) {
+        move_t previous_move = board.history.back();
+        if ((own_color == Color::WHITE && y == 4) || (own_color == Color::BLACK && y == 3)) {
+            // the to-be-capturing pawn has advanced exactly three ranks
+            for (int dx : {-1, 1}) {
+                if (board.in_board(x+dx, y) && board.at(x+dx, y).piece.type == PieceType::PAWN && board.at(x+dx, y).piece.color != own_color) {
+                    if (previous_move.from_x == x+dx && previous_move.from_y == y+2*direction && previous_move.to_x == x+dx && previous_move.to_y == y) {
+                        // the to-be-captured pawn has moved two squares in one move, landing right next to the to-be-capturing pawn, in the previous move
+                        moves.push_back(move_t{x, y, x + dx, y+direction, PieceType::EMPTY, true});
+                    }
+                }
+            }
+        }
+    }
 
     return moves;
 }

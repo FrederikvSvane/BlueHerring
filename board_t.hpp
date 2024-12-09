@@ -11,6 +11,7 @@ using namespace std;
 
 struct board_t {
     array<square_t, 64> board;
+    vector<move_t> history;
 
     board_t() {
         for (int x = 0; x < 8; x++) {
