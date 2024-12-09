@@ -37,12 +37,16 @@ piece_t make_move(board_t& board, const move_t& move) {
 
     from_square.piece = piece_t{};
 
+    board.history.push_back(move);
+
     return captured_piece;
 }
 
 void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece) {
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
+
+    board.history.pop_back();
 
     // Infer whether the move is an en-passant or a castling move
     bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
@@ -265,7 +269,8 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
         }
     }
 
-    if (board.history.size() > 1) {
+    // en-passant
+    if (board.history.size() >= 1) {
         move_t previous_move = board.history.back();
         if ((own_color == Color::WHITE && y == 4) || (own_color == Color::BLACK && y == 3)) {
             // the to-be-capturing pawn has advanced exactly three ranks

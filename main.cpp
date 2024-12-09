@@ -26,7 +26,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     vector<move_t> moves        = translate_moves(string_moves);
     for (const move_t& move : moves) {
         moves::make_move(board, move);
-        board.history.push_back(move);
     }
 
     // For printing the input file line by line (testing)

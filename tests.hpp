@@ -2,6 +2,7 @@
 #define tests_hpp
 
 #include "moves.hpp"
+#include <chrono>
 
 namespace tests {
 
