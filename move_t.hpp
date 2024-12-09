@@ -9,7 +9,6 @@ struct move_t {
     int to_x;
     int to_y;
     PieceType promotion_type;
-    bool is_special; // for castling or en-passant
 };
 
 static int col_to_int(char col) {
@@ -37,7 +36,7 @@ move_t parse_move(const string& move_str) { // move_str example: "e2e4"
     // TODO: handle promotion properly
     PieceType promotion_type = PieceType::EMPTY;
 
-    return move_t{from_x, from_y, to_x, to_y, promotion_type, false};
+    return move_t{from_x, from_y, to_x, to_y, promotion_type};
 }
 
 vector<move_t> translate_moves(const vector<string>& move_strings) {

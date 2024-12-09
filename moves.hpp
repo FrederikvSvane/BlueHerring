@@ -11,17 +11,22 @@ piece_t make_move(board_t& board, const move_t& move) {
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
 
+    // Infer whether the move is an en-passant or a castling move
+    bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
+    bool is_castling;
+
     // Save captured piece before overwriting
     piece_t captured_piece;
 
-    if (move.is_special && from_square.piece.type == PieceType::PAWN) {
-        // En passant
+    if (is_en_passant) {
         captured_piece = (from_square.piece.color == Color::WHITE) ? piece_t{PieceType::PAWN, Color::BLACK} : piece_t{PieceType::PAWN, Color::WHITE};
         board.at(move.to_x, move.from_y).piece = piece_t{};
     }
     else {
         captured_piece = to_square.piece;
     }
+
+    // TODO: handle castling
 
     to_square.piece   = from_square.piece;
     from_square.piece = piece_t{};
@@ -37,6 +42,10 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
 
+    // Infer whether the move is an en-passant or a castling move
+    bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
+    bool is_castling;
+
     // Move the piece back
     from_square.piece = to_square.piece;
 
@@ -46,13 +55,14 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
     }
 
     // Restore the captured piece
-    if (move.is_special && from_square.piece.type == PieceType::PAWN) {
-        // En passant
+    if (is_en_passant) {
         board.at(move.to_x, move.from_y).piece = captured_piece;
     }
     else {
         to_square.piece = captured_piece;
     }
+
+    // TODO: handle castling
 }
 
 vector<square_t> line(const board_t& board, const move_t& move) {
@@ -146,10 +156,10 @@ bool is_in_check(const board_t& board, Color color) {
     }
 
     // check diagonals for bishops and queens
-    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, 7 - k_y), k_y + min(7 - k_x, 7 - k_y), PieceType::EMPTY, 0});
-    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 7 - k_y), k_y + min(k_x, 7 - k_y), PieceType::EMPTY, 0});
-    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, k_y), k_y - min(7 - k_x, k_y), PieceType::EMPTY, 0});
-    const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY, 0});
+    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, 7 - k_y), k_y + min(7 - k_x, 7 - k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 7 - k_y), k_y + min(k_x, 7 - k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, k_y), k_y - min(7 - k_x, k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY});
 
     for (const auto& diagonal : array<vector<square_t>, 4>{diagonal_ur, diagonal_ul, diagonal_dr, diagonal_dl}) {
         if (is_check_from_line(board, diagonal, color, true)) {
@@ -158,10 +168,10 @@ bool is_in_check(const board_t& board, Color color) {
     }
 
     // check straight lines for rooks and queens
-    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 7, PieceType::EMPTY, 0});
-    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 7, k_y, PieceType::EMPTY, 0});
-    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, 0, PieceType::EMPTY, 0});
-    const vector<square_t> line_l = line(board, move_t{k_x, k_y, 0, k_y, PieceType::EMPTY, 0});
+    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 7, PieceType::EMPTY});
+    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 7, k_y, PieceType::EMPTY});
+    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, 0, PieceType::EMPTY});
+    const vector<square_t> line_l = line(board, move_t{k_x, k_y, 0, k_y, PieceType::EMPTY});
 
     for (const auto& straight_line : array<vector<square_t>, 4>{line_u, line_r, line_d, line_l}) {
         if (is_check_from_line(board, straight_line, color, false)) {
@@ -218,15 +228,15 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
             (own_color == Color::BLACK && y + direction == 0)) {
             for (PieceType promotion : {PieceType::QUEEN, PieceType::ROOK,
                                         PieceType::BISHOP, PieceType::KNIGHT}) {
-                moves.push_back(move_t{x, y, x, y + direction, promotion, false});
+                moves.push_back(move_t{x, y, x, y + direction, promotion});
             }
         } else {
-            moves.push_back(move_t{x, y, x, y + direction, PieceType::EMPTY, false});
+            moves.push_back(move_t{x, y, x, y + direction, PieceType::EMPTY});
 
             // first move - two squares (only if not promoting)
             if ((own_color == Color::WHITE && y == 1) || (own_color == Color::BLACK && y == 6)) {
                 if (board.at(x, y + 2 * direction).piece.type == PieceType::EMPTY) {
-                    moves.push_back(move_t{x, y, x, y + 2 * direction, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, x, y + 2 * direction, PieceType::EMPTY});
                 }
             }
         }
@@ -242,10 +252,10 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
                     (own_color == Color::BLACK && y + direction == 0)) {
                     for (PieceType promotion : {PieceType::QUEEN, PieceType::ROOK,
                                                 PieceType::BISHOP, PieceType::KNIGHT}) {
-                        moves.push_back(move_t{x, y, x + dx, y + direction, promotion, false});
+                        moves.push_back(move_t{x, y, x + dx, y + direction, promotion});
                     }
                 } else {
-                    moves.push_back(move_t{x, y, x + dx, y + direction, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, x + dx, y + direction, PieceType::EMPTY});
                 }
             }
         }
@@ -259,7 +269,7 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
                 if (board.in_board(x+dx, y) && board.at(x+dx, y).piece.type == PieceType::PAWN && board.at(x+dx, y).piece.color != own_color) {
                     if (previous_move.from_x == x+dx && previous_move.from_y == y+2*direction && previous_move.to_x == x+dx && previous_move.to_y == y) {
                         // the to-be-captured pawn has moved two squares in one move, landing right next to the to-be-capturing pawn, in the previous move
-                        moves.push_back(move_t{x, y, x + dx, y+direction, PieceType::EMPTY, true});
+                        moves.push_back(move_t{x, y, x + dx, y+direction, PieceType::EMPTY});
                     }
                 }
             }
@@ -288,10 +298,10 @@ vector<move_t> get_rook_moves(const board_t& board, int x, int y) {
             const square_t& target = board.at(current_x, current_y);
 
             if (target.piece.type == PieceType::EMPTY) {
-                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
             } else {
                 if (target.piece.color != own_color) {
-                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
                 }
                 break; // stop after encountering any piece
             }
@@ -313,7 +323,7 @@ vector<move_t> get_knight_moves(const board_t& board, int x, int y) {
 
     for (const auto& [to_x, to_y] : offsets) {
         if (board.in_board(to_x, to_y) && board.at(to_x, to_y).piece.color != own_color) {
-            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY, false});
+            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY});
         }
     }
 
@@ -339,10 +349,10 @@ vector<move_t> get_bishop_moves(const board_t& board, int x, int y) {
             const square_t& target = board.at(current_x, current_y);
 
             if (target.piece.type == PieceType::EMPTY) {
-                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
             } else {
                 if (target.piece.color != own_color) {
-                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY, false});
+                    moves.push_back(move_t{x, y, current_x, current_y, PieceType::EMPTY});
                 }
                 break; // stop after encountering any piece
             }
@@ -371,7 +381,7 @@ vector<move_t> get_king_moves(const board_t& board, int x, int y) {
 
     for (const auto& [to_x, to_y] : offsets) {
         if (board.in_board(to_x, to_y) && board.at(to_x, to_y).piece.color != own_color) {
-            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY, false});
+            moves.push_back(move_t{x, y, to_x, to_y, PieceType::EMPTY});
         }
     }
 

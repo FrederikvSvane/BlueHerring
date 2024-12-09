@@ -42,7 +42,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
 
     board.pretty_print_board();
 
-    // cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY, 0}) << std::endl;
+    // cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY}) << std::endl;
     // std::cout << "Final position evaluation: " << eval::evaluate_position(board) << std::endl;
 
     // move_t m = {7, 0, 0, 0, PieceType::BISHOP, false};
