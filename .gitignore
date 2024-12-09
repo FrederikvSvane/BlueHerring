@@ -2,3 +2,4 @@ BlueHerring
 *.o
 /build
 /.vscode
+/main.dSYM
