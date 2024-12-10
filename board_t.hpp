@@ -11,6 +11,7 @@ using namespace std;
 
 struct board_t {
     array<square_t, 64> board;
+    vector<move_t> history;
 
     board_t() {
         for (int x = 0; x < 8; x++) {
@@ -79,12 +80,56 @@ struct board_t {
         }
     }
 
+    void initialize_board_from_fen(const string& fen) { // fen as in fen notation (way to describe a whole chess board in one string)
+        // First initialize all squares with coordinates and empty pieces
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                at(x, y).x     = x;
+                at(x, y).y     = y;
+                at(x, y).piece = piece_t(PieceType::EMPTY, Color::NONE);
+            }
+        }
+        int x = 0, y = 7; // start from top row
+
+        for (char c : fen) {
+            if (c == '/') {
+                x = 0;
+                y--;
+                continue;
+            }
+
+            if (isdigit(c)) {
+                x += c - '0';
+                continue;
+            }
+
+            Color color = isupper(c) ? Color::WHITE : Color::BLACK;
+            char piece  = toupper(c);
+
+            PieceType type;
+            switch (piece) {
+            case 'P': type = PieceType::PAWN; break;
+            case 'N': type = PieceType::KNIGHT; break;
+            case 'B': type = PieceType::BISHOP; break;
+            case 'R': type = PieceType::ROOK; break;
+            case 'Q': type = PieceType::QUEEN; break;
+            case 'K': type = PieceType::KING; break;
+            default: continue;
+            }
+
+            at(x, y).piece = piece_t(type, color);
+            at(x, y).x     = x;
+            at(x, y).y     = y;
+            x++;
+        }
+    }
+
     void pretty_print_board() {
         cout << endl;
         cout << "  a b c d e f g h" << endl;
         for (int y = 7; y >= 0; y--) {
             // cout << y + 1 << " ";
-            cout << y << " ";
+            cout << y + 1 << " ";
             for (int x = 0; x < 8; x++) {
                 cout << at(x, y) << " ";
             }

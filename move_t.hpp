@@ -9,7 +9,6 @@ struct move_t {
     int to_x;
     int to_y;
     PieceType promotion_type;
-    bool is_special; // for castling or en-passant
 };
 
 static int col_to_int(char col) {
@@ -18,6 +17,16 @@ static int col_to_int(char col) {
 
 static int row_to_int(char row) {
     return (row - '1'); // fx '1' => 0, '2' => 1.
+}
+
+PieceType char_to_piece(char p) {
+    switch (p) {
+    case 'q': return PieceType::QUEEN;
+    case 'n': return PieceType::KNIGHT;
+    case 'r': return PieceType::ROOK;
+    case 'b': return PieceType::BISHOP;    
+    default: return PieceType::EMPTY;
+    }
 }
 
 move_t parse_move(const string& move_str) { // move_str example: "e2e4"
@@ -34,10 +43,9 @@ move_t parse_move(const string& move_str) { // move_str example: "e2e4"
         throw invalid_argument("Invalid coordinates in move string");
     }
 
-    // TODO: handle promotion properly
-    PieceType promotion_type = PieceType::EMPTY;
+    PieceType promotion_type = (move_str.length() > 4) ? char_to_piece(move_str[4]) : PieceType::EMPTY;
 
-    return move_t{from_x, from_y, to_x, to_y, promotion_type, false};
+    return move_t{from_x, from_y, to_x, to_y, promotion_type};
 }
 
 vector<move_t> translate_moves(const vector<string>& move_strings) {

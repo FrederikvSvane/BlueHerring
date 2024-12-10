@@ -4,6 +4,7 @@
 #include "move_t.hpp"
 #include <locale>
 #include "moves.hpp"
+#include "tests.hpp"
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_example.txt
 {
@@ -15,10 +16,13 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     string input_file_name  = argv[2];
     string output_file_name = argv[4];
 
+    tests::run_test_suite();
+
+    // std::cout << "Starting position evaluation: " << eval::evaluate_position(board) << std::endl;
+
     board_t board{};
     board.initialize_starting_board();
     board.pretty_print_board();
-
 
 
 
@@ -27,7 +31,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     vector<string> string_moves = read_moves_from_input_file(&input_file_name);
     vector<move_t> moves        = translate_moves(string_moves);
 
-    // For printing the input file line by line (testing)
+    // // For printing the input file line by line (testing)
     cout << endl;
     cout << "Making the following moves:" << endl;
     for (const string& move : string_moves) {
@@ -47,7 +51,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
 
     //NOT WORKING BECAUSE I'M MISSING IMPLEMENTATION OF board.history
 
-    // cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY, 0}) << std::endl;
+    // cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY}) << std::endl;
     // std::cout << "Final position evaluation: " << eval::evaluate_position(board) << std::endl;
 
     // move_t m = {7, 0, 0, 0, PieceType::BISHOP, false};
