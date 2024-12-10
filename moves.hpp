@@ -6,6 +6,7 @@
 #include "move_t.hpp"
 #include <array>
 #include <vector>
+#include <stdint.h>     //had to include this, otherwise didn't compile on my pc
 
 piece_t make_move(board_t& board, const move_t& move) {
     square_t& from_square = board.at(move.from_x, move.from_y);
@@ -21,6 +22,7 @@ piece_t make_move(board_t& board, const move_t& move) {
         to_square.piece.type = move.promotion_type;
     }
 
+    //TODO: Adapt moves for special moves
     return captured_piece;
 }
 
@@ -169,6 +171,7 @@ bool is_in_check(const board_t& board, Color color) {
 }
 
 bool is_move_legal(board_t& board, const move_t& move) {
+    // checks knight moves
     vector<square_t> line_of_move = line(board, move);
     if (board.at(move.from_x, move.from_y).piece.type != PieceType::KNIGHT) {
         for (auto& square : line_of_move) {
@@ -178,6 +181,7 @@ bool is_move_legal(board_t& board, const move_t& move) {
         }
     }
 
+    // checks target is empty or of different color
     Color moving_color = board.at(move.from_x, move.from_y).piece.color;
     if (board.at(move.to_x, move.to_y).piece.color == moving_color) {
         return false;
@@ -334,6 +338,16 @@ vector<move_t> get_queen_moves(const board_t& board, int x, int y) {
     return line_moves;
 }
 
+static bool has_moved(const board_t& board, int x, int y){
+    //Checks whether any move including x,y has ever been made:
+    for(const auto& move_t : board.history){
+        if((move_t.from_x == x && move_t.from_y == y) || (move_t.to_x == x && move_t.to_y == y)){
+            return true;
+        }
+    }
+    return false;
+}
+
 vector<move_t> get_king_moves(const board_t& board, int x, int y) {
     vector<move_t> moves;
     Color own_color = board.at(x, y).piece.color;
@@ -347,8 +361,31 @@ vector<move_t> get_king_moves(const board_t& board, int x, int y) {
         }
     }
 
-    // TODO: Castling moves should be added here
+    // CASTLING MOVES:
 
+    if(own_color == Color::BLACK){
+        //if the black king hasn't moved:
+        if(has_moved(board, 4, 7) == false){
+            if(has_moved(board, 0, 7) == false){    // we can left castle
+                moves.push_back(move_t{x, y, 2, 7, PieceType::EMPTY, true});
+            }
+            if(has_moved(board, 7, 7) == false){    // we can right castle
+                moves.push_back(move_t{x, y, 6, 7, PieceType::EMPTY, true});
+            }
+        }
+    }
+
+    if(own_color == Color::WHITE){
+        //if the white king hasn't moved:
+        if(has_moved(board, 4, 0) == false){
+            if(has_moved(board, 0, 0) == false){    // we can left castle
+                moves.push_back(move_t{x, y, 2, 0, PieceType::EMPTY, true});
+            }
+            if(has_moved(board, 7, 0) == false){    // we can right castle
+                moves.push_back(move_t{x, y, 6, 0, PieceType::EMPTY, true});
+            }
+        }
+    }
     return moves;
 }
 
