@@ -73,6 +73,7 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
     // TODO: handle castling
 }
 
+// returns a vector of the squares that a sliding move goes through, excluding the from- and to- squares of the move!
 vector<square_t> line(const board_t& board, const move_t& move) {
     vector<square_t> squares;
 
@@ -164,9 +165,9 @@ bool is_in_check(const board_t& board, Color color) {
     }
 
     // check diagonals for bishops and queens
-    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, 7 - k_y), k_y + min(7 - k_x, 7 - k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 7 - k_y), k_y + min(k_x, 7 - k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(7 - k_x, k_y), k_y - min(7 - k_x, k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(8 - k_x, 8 - k_y), k_y + min(8 - k_x, 8 - k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 8 - k_y), k_y + min(k_x, 8 - k_y), PieceType::EMPTY});
+    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(8 - k_x, k_y), k_y - min(8 - k_x, k_y), PieceType::EMPTY});
     const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY});
 
     for (const auto& diagonal : array<vector<square_t>, 4>{diagonal_ur, diagonal_ul, diagonal_dr, diagonal_dl}) {
@@ -176,10 +177,10 @@ bool is_in_check(const board_t& board, Color color) {
     }
 
     // check straight lines for rooks and queens
-    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 7, PieceType::EMPTY});
-    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 7, k_y, PieceType::EMPTY});
-    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, 0, PieceType::EMPTY});
-    const vector<square_t> line_l = line(board, move_t{k_x, k_y, 0, k_y, PieceType::EMPTY});
+    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 8, PieceType::EMPTY});
+    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 8, k_y, PieceType::EMPTY});
+    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, -1, PieceType::EMPTY});
+    const vector<square_t> line_l = line(board, move_t{k_x, k_y, -1, k_y, PieceType::EMPTY});
 
     for (const auto& straight_line : array<vector<square_t>, 4>{line_u, line_r, line_d, line_l}) {
         if (is_check_from_line(board, straight_line, color, false)) {

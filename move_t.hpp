@@ -1,6 +1,7 @@
 #ifndef move_t_hpp
 #define move_t_hpp
 
+#include <iostream>
 #include "piece_t.hpp"
 
 struct move_t {
@@ -14,9 +15,15 @@ struct move_t {
 static int col_to_int(char col) {
     return col - 'a'; // fx 'a' => 0, 'b' => 1.
 }
+string int_to_col(int x) {
+    return string(1, "abcdefgh"[x]);
+}
 
 static int row_to_int(char row) {
     return (row - '1'); // fx '1' => 0, '2' => 1.
+}
+string int_to_row(int y) {
+    return to_string(y + 1);
 }
 
 PieceType char_to_piece(char p) {
@@ -26,6 +33,15 @@ PieceType char_to_piece(char p) {
     case 'r': return PieceType::ROOK;
     case 'b': return PieceType::BISHOP;    
     default: return PieceType::EMPTY;
+    }
+}
+string piece_to_string(PieceType piece) {
+    switch (piece) {
+    case PieceType::QUEEN: return string(1, 'q');
+    case PieceType::KNIGHT: return string(1, 'n');
+    case PieceType::ROOK: return string(1, 'r');
+    case PieceType::BISHOP: return string(1, 'b');
+    default: return "";
     }
 }
 
@@ -46,6 +62,11 @@ move_t parse_move(const string& move_str) { // move_str example: "e2e4"
     PieceType promotion_type = (move_str.length() > 4) ? char_to_piece(move_str[4]) : PieceType::EMPTY;
 
     return move_t{from_x, from_y, to_x, to_y, promotion_type};
+}
+
+string encode_move(const move_t& move) {
+    string move_str = int_to_col(move.from_x) + int_to_row(move.from_y) + int_to_col(move.to_x) + int_to_row(move.to_y);
+    return (move.promotion_type == PieceType::EMPTY) ? move_str : move_str + piece_to_string(move.promotion_type);
 }
 
 vector<move_t> translate_moves(const vector<string>& move_strings) {
