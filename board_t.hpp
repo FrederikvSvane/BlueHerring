@@ -4,14 +4,33 @@
 #include "operators_util.hpp"
 #include "piece_t.hpp"
 #include "square_t.hpp"
+#include "string_util.hpp"
 #include <array>
 #include <iostream>
 
 using namespace std;
 
+struct board_state {
+    bool white_king_side_castle;
+    bool white_queen_side_castle;
+    bool black_king_side_castle;
+    bool black_queen_side_castle;
+    int en_passant_x;
+    int en_passant_y;
+};
+
 struct board_t {
     array<square_t, 64> board;
     vector<move_t> history;
+    vector<board_state> state_history; // Track historical states
+
+    // Current state
+    bool white_king_side_castle;
+    bool white_queen_side_castle;
+    bool black_king_side_castle;
+    bool black_queen_side_castle;
+    int en_passant_x;
+    int en_passant_y;
 
     board_t() {
         for (int x = 0; x < 8; x++) {
@@ -19,6 +38,15 @@ struct board_t {
                 at(x, y) = square_t();
             }
         }
+        // Initialize castling rights
+        white_king_side_castle  = true;
+        white_queen_side_castle = true;
+        black_king_side_castle  = true;
+        black_queen_side_castle = true;
+
+        // Initialize en passant (no target square initially)
+        en_passant_x = -1;
+        en_passant_y = -1;
     }
 
     static constexpr inline int index(int x, int y) {
@@ -121,6 +149,33 @@ struct board_t {
             at(x, y).x     = x;
             at(x, y).y     = y;
             x++;
+        }
+
+        vector<string> parts = split(fen, ' ');
+        if (parts.size() > 2) {
+            // Reset castling rights first
+            white_king_side_castle  = false;
+            white_queen_side_castle = false;
+            black_king_side_castle  = false;
+            black_queen_side_castle = false;
+
+            // Set castling rights based on FEN
+            string castling = parts[2];
+            if (castling != "-") {
+                white_king_side_castle  = castling.find('K') != string::npos;
+                white_queen_side_castle = castling.find('Q') != string::npos;
+                black_king_side_castle  = castling.find('k') != string::npos;
+                black_queen_side_castle = castling.find('q') != string::npos;
+            }
+
+            // Set en passant square if exists
+            if (parts.size() > 3 && parts[3] != "-") {
+                en_passant_x = parts[3][0] - 'a';
+                en_passant_y = parts[3][1] - '1'; 
+            } else {
+                en_passant_x = -1;
+                en_passant_y = -1;
+            }
         }
     }
 
