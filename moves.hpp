@@ -6,7 +6,10 @@
 #include "move_t.hpp"
 #include <array>
 #include <vector>
+#include <cmath>        //for absolute value
 #include <stdint.h>     //had to include this, otherwise didn't compile on my pc
+
+namespace moves{
 
 piece_t make_move(board_t& board, const move_t& move) {
     square_t& from_square = board.at(move.from_x, move.from_y);
@@ -14,11 +17,12 @@ piece_t make_move(board_t& board, const move_t& move) {
 
     // Infer whether the move is an en-passant or a castling move
     bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
-    bool is_castling;
+    bool is_castling = (from_square.piece.type == PieceType::KING && (abs(from_square.x - to_square.x) == 2));
 
     // Save captured piece before overwriting
     piece_t captured_piece;
 
+    // SPECIAL CASE: EN PASSANT
     if (is_en_passant) {
         captured_piece                         = (from_square.piece.color == Color::WHITE) ? piece_t{PieceType::PAWN, Color::BLACK} : piece_t{PieceType::PAWN, Color::WHITE};
         board.at(move.to_x, move.from_y).piece = piece_t{};
@@ -26,17 +30,23 @@ piece_t make_move(board_t& board, const move_t& move) {
         captured_piece = to_square.piece;
     }
 
-    // TODO: handle castling
+    // SPECIAL CASE: CASTLING
+    // In this case, we need to 'manually' move the rook. The king movement will be handled by the general case
+    if (is_castling){
+        if(to_square.x == 6){       //right castling
+            make_move(board, move_t{7, from_square.y, 5, from_square.y, PieceType::EMPTY});
+        }
+        else if(to_square.x == 2){ //left castling
+            make_move(board, move_t{0, from_square.y, 3, from_square.y, PieceType::EMPTY});
+        }
+    }
 
     to_square.piece = from_square.piece;
 
+    //SPECIAL CASE: PROMOTION
     if (move.promotion_type != PieceType::EMPTY) {
         to_square.piece.type  = move.promotion_type;
     }
-
-    from_square.piece = piece_t{};
-
-    board.history.push_back(move);
 
     from_square.piece = piece_t{};
 
@@ -54,7 +64,7 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
 
     // Infer whether the move is an en-passant or a castling move
     bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
-    bool is_castling;
+    bool is_castling = (from_square.piece.type == PieceType::KING && (abs(from_square.x - to_square.x) == 2));
 
     // Move the piece back
     from_square.piece = to_square.piece;
@@ -66,6 +76,16 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
 
     // Clear the destination square
     to_square.piece = piece_t{};
+
+    // If it was castling, restore rook position
+    if (is_castling){
+        if(to_square.x == 6){       //right castling
+            make_move(board, move_t{5, from_square.y, 7, from_square.y, PieceType::EMPTY});
+        }
+        else if(to_square.x == 2){ //left castling
+            make_move(board, move_t{3, from_square.y, 0, from_square.y, PieceType::EMPTY});
+        }
+    }
 
     // Restore the captured piece
     if (is_en_passant) {
@@ -412,30 +432,23 @@ vector<move_t> get_king_moves(const board_t& board, int x, int y) {
     }
 
     // CASTLING MOVES:
-
-    if(own_color == Color::BLACK){
-        //if the black king hasn't moved:
-        if(has_moved(board, 4, 7) == false){
-            if(has_moved(board, 0, 7) == false){    // we can left castle
-                moves.push_back(move_t{x, y, 2, 7, PieceType::EMPTY});
+    int y_coor = (own_color == Color::WHITE) ? 0 : 7;
+    if(has_moved(board, 4, y_coor) == false){
+        if(has_moved(board, 0, y_coor) == false){    // we could left castle, as long as no pieces are in between
+            if(board.at(1, y_coor).piece.type == PieceType::EMPTY &&
+               board.at(2, y_coor).piece.type == PieceType::EMPTY && 
+               board.at(3, y_coor).piece.type == PieceType::EMPTY){
+                    moves.push_back(move_t{x, y, 2, y_coor, PieceType::EMPTY});
             }
-            if(has_moved(board, 7, 7) == false){    // we can right castle
-                moves.push_back(move_t{x, y, 6, 7, PieceType::EMPTY});
-            }
+        }
+        if(has_moved(board, 7, y_coor) == false){    // we could right castle, as long as no pieces are in between
+            if(board.at(5, y_coor).piece.type == PieceType::EMPTY &&
+                board.at(6, y_coor).piece.type == PieceType::EMPTY){
+                    moves.push_back(move_t{x, y, 6, y_coor, PieceType::EMPTY});
+                }
         }
     }
 
-    if(own_color == Color::WHITE){
-        //if the white king hasn't moved:
-        if(has_moved(board, 4, 0) == false){
-            if(has_moved(board, 0, 0) == false){    // we can left castle
-                moves.push_back(move_t{x, y, 2, 0, PieceType::EMPTY});
-            }
-            if(has_moved(board, 7, 0) == false){    // we can right castle
-                moves.push_back(move_t{x, y, 6, 0, PieceType::EMPTY});
-            }
-        }
-    }
     return moves;
 }
 
@@ -500,5 +513,7 @@ vector<move_t> generate_all_moves_for_color(board_t& board, Color color) {
 
     return all_moves;
 }
+
+} // namespace moves
 
 #endif
