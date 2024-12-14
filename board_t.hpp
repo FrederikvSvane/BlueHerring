@@ -191,7 +191,8 @@ struct board_t {
     }
 
     void pretty_print_board() {
-        cout << endl;
+        cout << "\n"
+             << endl;
         cout << "  a b c d e f g h" << endl;
         for (int y = 7; y >= 0; y--) {
             // cout << y + 1 << " ";
@@ -201,6 +202,8 @@ struct board_t {
             }
             cout << endl;
         }
+        cout << "\n"
+             << endl;
     }
 
     string format_castling(bool king_side, bool queen_side) const {

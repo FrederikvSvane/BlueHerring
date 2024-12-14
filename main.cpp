@@ -16,8 +16,10 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     string input_file_name  = argv[2];
     string output_file_name = argv[4];
 
-    tests::run_move_test_suite();
-    tests::run_perft_suite();
+    // tests::run_move_test_suite();
+    // tests::run_perft_suite();
+
+    tests::run_speed_test_suite();
 
     return 0;
 }

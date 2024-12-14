@@ -5,6 +5,7 @@
 #include <cassert>
 #include <chrono>
 #include <functional>
+#include <iomanip>
 #include <map>
 #include <string>
 
@@ -33,7 +34,6 @@ pair<uint64_t, map<string, uint64_t>> perft(board_t& board, int depth, Color col
                                      .first;
         nodes += subtree_count;
 
-        // Convert move to string representation
         string move_str       = encode_move(move);
         move_counts[move_str] = subtree_count;
 
@@ -955,6 +955,64 @@ void run_move_test_suite() {
     run_move_test("Castling through check", test_castling_through_check);
     run_move_test("Move generation in check", test_move_generation_in_check);
     run_move_test("Pawn promotion move into check", test_check_after_pawn_promotion_capture);
+}
+
+void run_speed_test_suite() {
+    vector<pair<string, int>> test_positions = {
+        // Starting position
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5},
+
+        // Middle game position
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4},
+
+        // End game position
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 5},
+    };
+
+    vector<double> nps_results;
+    uint64_t total_nodes = 0;
+    auto suite_start     = chrono::high_resolution_clock::now();
+
+    for (const auto& [fen, max_depth] : test_positions) {
+        board_t board;
+        board.initialize_board_from_fen(fen);
+
+        cout << "\nRunning speed test for position:\n";
+        board.pretty_print_board();
+
+        uint64_t position_nodes = 0;
+        auto position_start     = chrono::high_resolution_clock::now();
+
+        for (int depth = 1; depth <= max_depth; depth++) {
+            auto depth_start    = chrono::high_resolution_clock::now();
+            auto [nodes, moves] = perft(board, depth, board.active_color, false);
+            auto depth_end      = chrono::high_resolution_clock::now();
+
+            position_nodes += nodes;
+            total_nodes += nodes;
+            auto depth_duration = chrono::duration_cast<chrono::milliseconds>(depth_end - depth_start);
+            double depth_nps    = static_cast<double>(nodes) * 1000.0 / depth_duration.count();
+
+            cout << "Depth " << depth << ": "
+                 << nodes << " nodes in "
+                 << depth_duration.count() << "ms"
+                 << " (" << fixed << setprecision(0) << depth_nps << " NPS)\n";
+        }
+
+        auto position_end      = chrono::high_resolution_clock::now();
+        auto position_duration = chrono::duration_cast<chrono::milliseconds>(position_end - position_start);
+        double position_nps    = static_cast<double>(position_nodes) * 1000.0 / position_duration.count();
+        nps_results.push_back(position_nps);
+
+        cout << "\n------------> Average NPS: " << fixed << setprecision(0) << position_nps << "\n";
+        cout << "\n________________________________________________\n";
+    }
+
+    auto suite_end      = chrono::high_resolution_clock::now();
+    auto suite_duration = chrono::duration_cast<chrono::milliseconds>(suite_end - suite_start);
+    double overall_nps  = static_cast<double>(total_nodes) * 1000.0 / suite_duration.count();
+
+    cout << "\nFinal average NPS: " << fixed << setprecision(0) << overall_nps << "\n";
 }
 
 } // namespace tests
