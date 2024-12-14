@@ -17,25 +17,6 @@ struct perft_test_case {
     bool single_color_scenario;
 };
 
-// pair<uint64_t, vector<move_t>> perft(board_t& board, int depth, Color color, bool single_color_only) {
-//     if (depth == 0)
-//         return {1, {}};
-
-//     uint64_t nodes       = 0;
-//     vector<move_t> moves = moves::generate_all_moves_for_color(board, color);
-
-//     for (const move_t& move : moves) {
-//         piece_t captured_piece = moves::make_move(board, move);
-//         nodes += perft(board, depth - 1,
-//                        single_color_only ? color : (color == Color::WHITE ? Color::BLACK : Color::WHITE),
-//                        single_color_only)
-//                      .first;
-//         moves::undo_move(board, move, captured_piece);
-//     }
-
-//     return {nodes, moves};
-// }
-
 pair<uint64_t, map<string, uint64_t>> perft(board_t& board, int depth, Color color, bool single_color_only) {
     if (depth == 0)
         return {1, {}};
@@ -62,65 +43,6 @@ pair<uint64_t, map<string, uint64_t>> perft(board_t& board, int depth, Color col
     return {nodes, move_counts};
 }
 
-// void run_perft_suite() {
-//     auto start_time         = chrono::high_resolution_clock::now();
-//     uint64_t total_node_sum = 0;
-
-//     vector<perft_test_case> test_cases = {
-//         // These are taken from https://www.chessprogramming.org/Perft_Results
-//         // {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 4, {1, 20, 400, 8902, 197281}, false},
-//         // {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -", 3, {1, 48, 2039, 97862}, false},
-//         // {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -", 4, {1, 14, 191, 2812, 43238}, false},
-//         // {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", 4, {1, 6, 264, 9467, 422333}, false},
-//         // {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 4, {1, 44, 1486, 62379, 2103487}, false},
-//         // {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", 4, {1, 46, 2079, 89890, 3894594}, false},
-//         // // These ones from http://www.rocechess.ch/perft.html
-//         // {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, {1, 48, 2039, 97862, 4085603}, false},
-//         // {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 5, {1, 24, 496, 9483, 182838, 3605103}, false},
-//         {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 4, {1, 24, 496, 9483, 182838}, false},
-//         // And these are custom made
-//         // {"8/P/8/8/8/8/8/8", 2, {1, 4, 44}, true},    // promotion
-//         // {"8/8/8/8/3p4/8/4P3/8", 2, {1, 2, 4}, false} // en passant
-
-//     };
-
-//     for (const auto& test : test_cases) {
-//         board_t board;
-//         board.initialize_board_from_fen(test.fen);
-
-//         cout << "\nRunning perft for WHITE with DEPTH=" << test.max_depth << ".\nPosition:\n";
-//         board.pretty_print_board();
-//         cout << endl;
-
-//         bool test_passed = true;
-//         for (int depth = 0; depth <= test.max_depth; depth++) {
-
-//             auto [result_int, result_vector] = perft(board, depth, Color::WHITE, test.single_color_scenario);
-
-//             total_node_sum += result_int;
-//             bool passed = result_int == test.expected_nodes[depth];
-//             test_passed &= passed;
-
-//             cout << "Depth " << depth << ": Result: " << result_int
-//                  << ", Expected: " << test.expected_nodes[depth]
-//                  << (passed ? " ✓" : " ✗")
-//                  << endl;
-//         }
-//         cout << (test_passed ? "\nSuccess!\n" : "\nFailed!\n") << endl;
-//     }
-
-//     auto end_time = chrono::high_resolution_clock::now();
-//     auto duration = chrono::duration_cast<chrono::seconds>(end_time - start_time);
-//     cout << "Test suite completed in " << duration.count() << " seconds" << endl;
-
-//     if (duration.count() > 0) {
-//         double nps = static_cast<double>(total_node_sum) / duration.count();
-//         cout << "Nodes per second (NPS): " << nps << endl;
-//     } else {
-//         cout << "Duration too short to calculate NPS." << endl;
-//     }
-// }
-
 void run_perft_suite() {
     auto start_time         = chrono::high_resolution_clock::now();
     uint64_t total_node_sum = 0;
@@ -136,12 +58,138 @@ void run_perft_suite() {
         // // These ones from http://www.rocechess.ch/perft.html
         {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, {1, 48, 2039, 97862, 4085603}, false},
         {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 5, {1, 24, 496, 9483, 182838, 3605103}, false},
-        {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 4, {1, 24, 496, 9483, 182838}, false},
         // And these are custom made
         {"8/P/8/8/8/8/8/8", 2, {1, 4, 44}, true},    // promotion
         {"8/8/8/8/3p4/8/4P3/8", 2, {1, 2, 4}, false} // en passant
 
     };
+
+    /* The FULL test suite (Sucessfully passes every single one as of December 14, 2024)
+    Taken from https://github.com/AndyGrant/Ethereal/blob/master/src/perft/standard.epd
+
+    vector<perft_test_case> test_cases = {
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 4, {1, 20, 400, 8902, 197281}, false},
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, {1, 48, 2039, 97862, 4085603}, false},
+        {"4k3/8/8/8/8/8/8/4K2R w K - 0 1", 4, {1, 15, 66, 1197, 7059}, false},
+        {"4k3/8/8/8/8/8/8/R3K3 w Q - 0 1", 4, {1, 16, 71, 1287, 7626}, false},
+        {"4k2r/8/8/8/8/8/8/4K3 w k - 0 1", 4, {1, 5, 75, 459, 8290}, false},
+        {"r3k3/8/8/8/8/8/8/4K3 w q - 0 1", 4, {1, 5, 80, 493, 8897}, false},
+        {"4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1", 4, {1, 26, 112, 3189, 17945}, false},
+        {"r3k2r/8/8/8/8/8/8/4K3 w kq - 0 1", 4, {1, 5, 130, 782, 22180}, false},
+        {"8/8/8/8/8/8/6k1/4K2R w K - 0 1", 4, {1, 12, 38, 564, 2219}, false},
+        {"8/8/8/8/8/8/1k6/R3K3 w Q - 0 1", 4, {1, 15, 65, 1018, 4573}, false},
+        {"4k2r/6K1/8/8/8/8/8/8 w k - 0 1", 4, {1, 3, 32, 134, 2073}, false},
+        {"r3k3/1K6/8/8/8/8/8/8 w q - 0 1", 4, {1, 4, 49, 243, 3991}, false},
+        {"r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", 4, {1, 26, 568, 13744, 314346}, false},
+        {"r3k2r/8/8/8/8/8/8/1R2K2R w Kkq - 0 1", 4, {1, 25, 567, 14095, 328965}, false},
+        {"r3k2r/8/8/8/8/8/8/2R1K2R w Kkq - 0 1", 4, {1, 25, 548, 13502, 312835}, false},
+        {"r3k2r/8/8/8/8/8/8/R3K1R1 w Qkq - 0 1", 4, {1, 25, 547, 13579, 316214}, false},
+        {"1r2k2r/8/8/8/8/8/8/R3K2R w KQk - 0 1", 4, {1, 26, 583, 14252, 334705}, false},
+        {"2r1k2r/8/8/8/8/8/8/R3K2R w KQk - 0 1", 4, {1, 25, 560, 13592, 317324}, false},
+        {"r3k1r1/8/8/8/8/8/8/R3K2R w KQq - 0 1", 4, {1, 25, 560, 13607, 320792}, false},
+        {"4k3/8/8/8/8/8/8/4K2R b K - 0 1", 4, {1, 5, 75, 459, 8290}, false},
+        {"4k3/8/8/8/8/8/8/R3K3 b Q - 0 1", 4, {1, 5, 80, 493, 8897}, false},
+        {"4k2r/8/8/8/8/8/8/4K3 b k - 0 1", 4, {1, 15, 66, 1197, 7059}, false},
+        {"r3k3/8/8/8/8/8/8/4K3 b q - 0 1", 4, {1, 16, 71, 1287, 7626}, false},
+        {"4k3/8/8/8/8/8/8/R3K2R b KQ - 0 1", 4, {1, 5, 130, 782, 22180}, false},
+        {"r3k2r/8/8/8/8/8/8/4K3 b kq - 0 1", 4, {1, 26, 112, 3189, 17945}, false},
+        {"8/8/8/8/8/8/6k1/4K2R b K - 0 1", 4, {1, 3, 32, 134, 2073}, false},
+        {"8/8/8/8/8/8/1k6/R3K3 b Q - 0 1", 4, {1, 4, 49, 243, 3991}, false},
+        {"4k2r/6K1/8/8/8/8/8/8 b k - 0 1", 4, {1, 12, 38, 564, 2219}, false},
+        {"r3k3/1K6/8/8/8/8/8/8 b q - 0 1", 4, {1, 15, 65, 1018, 4573}, false},
+        {"8/1n4N1/2k5/8/8/5K2/1N4n1/8 w - - 0 1", 4, {1, 14, 195, 2760, 38675}, false},
+        {"8/1k6/8/5N2/8/4n3/8/2K5 w - - 0 1", 4, {1, 11, 156, 1636, 20534}, false},
+        {"8/8/4k3/3Nn3/3nN3/4K3/8/8 w - - 0 1", 4, {1, 19, 289, 4442, 73584}, false},
+        {"K7/8/2n5/1n6/8/8/8/k6N w - - 0 1", 4, {1, 3, 51, 345, 5301}, false},
+        {"k7/8/2N5/1N6/8/8/8/K6n w - - 0 1", 4, {1, 17, 54, 835, 5910}, false},
+        {"8/1n4N1/2k5/8/8/5K2/1N4n1/8 b - - 0 1", 4, {1, 15, 193, 2816, 40039}, false},
+        {"8/1k6/8/5N2/8/4n3/8/2K5 b - - 0 1", 4, {1, 16, 180, 2290, 24640}, false},
+        {"8/8/3K4/3Nn3/3nN3/4k3/8/8 b - - 0 1", 4, {1, 4, 68, 1118, 16199}, false},
+        {"K7/8/2n5/1n6/8/8/8/k6N b - - 0 1", 4, {1, 17, 54, 835, 5910}, false},
+        {"k7/8/2N5/1N6/8/8/8/K6n b - - 0 1", 4, {1, 3, 51, 345, 5301}, false},
+        {"B6b/8/8/8/2K5/4k3/8/b6B w - - 0 1", 4, {1, 17, 278, 4607, 76778}, false},
+        {"8/8/1B6/7b/7k/8/2B1b3/7K w - - 0 1", 4, {1, 21, 316, 5744, 93338}, false},
+        {"k7/B7/1B6/1B6/8/8/8/K6b w - - 0 1", 4, {1, 21, 144, 3242, 32955}, false},
+        {"K7/b7/1b6/1b6/8/8/8/k6B w - - 0 1", 4, {1, 7, 143, 1416, 31787}, false},
+        {"B6b/8/8/8/2K5/5k2/8/b6B b - - 0 1", 4, {1, 6, 106, 1829, 31151}, false},
+        {"8/8/1B6/7b/7k/8/2B1b3/7K b - - 0 1", 4, {1, 17, 309, 5133, 93603}, false},
+        {"k7/B7/1B6/1B6/8/8/8/K6b b - - 0 1", 4, {1, 7, 143, 1416, 31787}, false},
+        {"K7/b7/1b6/1b6/8/8/8/k6B b - - 0 1", 4, {1, 21, 144, 3242, 32955}, false},
+        {"7k/RR6/8/8/8/8/rr6/7K w - - 0 1", 4, {1, 19, 275, 5300, 104342}, false},
+        {"R6r/8/8/2K5/5k2/8/8/r6R w - - 0 1", 4, {1, 36, 1027, 29215, 771461}, false},
+        {"7k/RR6/8/8/8/8/rr6/7K b - - 0 1", 4, {1, 19, 275, 5300, 104342}, false},
+        {"R6r/8/8/2K5/5k2/8/8/r6R b - - 0 1", 4, {1, 36, 1027, 29227, 771368}, false},
+        {"6kq/8/8/8/8/8/8/7K w - - 0 1", 4, {1, 2, 36, 143, 3637}, false},
+        {"6KQ/8/8/8/8/8/8/7k b - - 0 1", 4, {1, 2, 36, 143, 3637}, false},
+        {"K7/8/8/3Q4/4q3/8/8/7k w - - 0 1", 4, {1, 6, 35, 495, 8349}, false},
+        {"6qk/8/8/8/8/8/8/7K b - - 0 1", 4, {1, 22, 43, 1015, 4167}, false},
+        {"6KQ/8/8/8/8/8/8/7k b - - 0 1", 4, {1, 2, 36, 143, 3637}, false},
+        {"K7/8/8/3Q4/4q3/8/8/7k b - - 0 1", 4, {1, 6, 35, 495, 8349}, false},
+        {"8/8/8/8/8/K7/P7/k7 w - - 0 1", 4, {1, 3, 7, 43, 199}, false},
+        {"8/8/8/8/8/7K/7P/7k w - - 0 1", 4, {1, 3, 7, 43, 199}, false},
+        {"K7/p7/k7/8/8/8/8/8 w - - 0 1", 4, {1, 1, 3, 12, 80}, false},
+        {"7K/7p/7k/8/8/8/8/8 w - - 0 1", 4, {1, 1, 3, 12, 80}, false},
+        {"8/2k1p3/3pP3/3P2K1/8/8/8/8 w - - 0 1", 4, {1, 7, 35, 210, 1091}, false},
+        {"8/8/8/8/8/K7/P7/k7 b - - 0 1", 4, {1, 1, 3, 12, 80}, false},
+        {"8/8/8/8/8/7K/7P/7k b - - 0 1", 4, {1, 1, 3, 12, 80}, false},
+        {"K7/p7/k7/8/8/8/8/8 b - - 0 1", 4, {1, 3, 7, 43, 199}, false},
+        {"7K/7p/7k/8/8/8/8/8 b - - 0 1", 4, {1, 3, 7, 43, 199}, false},
+        {"8/2k1p3/3pP3/3P2K1/8/8/8/8 b - - 0 1", 4, {1, 5, 35, 182, 1091}, false},
+        {"8/8/8/8/8/4k3/4P3/4K3 w - - 0 1", 4, {1, 2, 8, 44, 282}, false},
+        {"4k3/4p3/4K3/8/8/8/8/8 b - - 0 1", 4, {1, 2, 8, 44, 282}, false},
+        {"8/8/7k/7p/7P/7K/8/8 w - - 0 1", 4, {1, 3, 9, 57, 360}, false},
+        {"8/8/k7/p7/P7/K7/8/8 w - - 0 1", 4, {1, 3, 9, 57, 360}, false},
+        {"8/8/3k4/3p4/3P4/3K4/8/8 w - - 0 1", 4, {1, 5, 25, 180, 1294}, false},
+        {"8/3k4/3p4/8/3P4/3K4/8/8 w - - 0 1", 4, {1, 8, 61, 483, 3213}, false},
+        {"8/8/3k4/3p4/8/3P4/3K4/8 w - - 0 1", 4, {1, 8, 61, 411, 3213}, false},
+        {"k7/8/3p4/8/3P4/8/8/7K w - - 0 1", 4, {1, 4, 15, 90, 534}, false},
+        {"8/8/7k/7p/7P/7K/8/8 b - - 0 1", 4, {1, 3, 9, 57, 360}, false},
+        {"8/8/k7/p7/P7/K7/8/8 b - - 0 1", 4, {1, 3, 9, 57, 360}, false},
+        {"8/8/3k4/3p4/3P4/3K4/8/8 b - - 0 1", 4, {1, 5, 25, 180, 1294}, false},
+        {"8/3k4/3p4/8/3P4/3K4/8/8 b - - 0 1", 4, {1, 8, 61, 411, 3213}, false},
+        {"8/8/3k4/3p4/8/3P4/3K4/8 b - - 0 1", 4, {1, 8, 61, 483, 3213}, false},
+        {"k7/8/3p4/8/3P4/8/8/7K b - - 0 1", 4, {1, 4, 15, 89, 537}, false},
+        {"7k/3p4/8/8/3P4/8/8/K7 w - - 0 1", 4, {1, 4, 19, 117, 720}, false},
+        {"7k/8/8/3p4/8/8/3P4/K7 w - - 0 1", 4, {1, 5, 19, 116, 716}, false},
+        {"k7/8/8/7p/6P1/8/8/K7 w - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"k7/8/7p/8/8/6P1/8/K7 w - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"k7/8/8/6p1/7P/8/8/K7 w - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"k7/8/6p1/8/8/7P/8/K7 w - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"k7/8/8/3p4/4p3/8/8/7K w - - 0 1", 4, {1, 3, 15, 84, 573}, false},
+        {"k7/8/3p4/8/8/4P3/8/7K w - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"7k/3p4/8/8/3P4/8/8/K7 b - - 0 1", 4, {1, 5, 19, 117, 720}, false},
+        {"7k/8/8/3p4/8/8/3P4/K7 b - - 0 1", 4, {1, 4, 19, 117, 712}, false},
+        {"k7/8/8/7p/6P1/8/8/K7 b - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"k7/8/7p/8/8/6P1/8/K7 b - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"k7/8/8/6p1/7P/8/8/K7 b - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"k7/8/6p1/8/8/7P/8/K7 b - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"k7/8/8/3p4/4p3/8/8/7K b - - 0 1", 4, {1, 5, 15, 102, 569}, false},
+        {"k7/8/3p4/8/8/4P3/8/7K b - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"7k/8/8/p7/1P6/8/8/7K w - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"7k/8/p7/8/8/1P6/8/7K w - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"7k/8/8/1p6/P7/8/8/7K w - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"7k/8/1p6/8/8/P7/8/7K w - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"k7/7p/8/8/8/8/6P1/K7 w - - 0 1", 4, {1, 5, 25, 161, 1035}, false},
+        {"k7/6p1/8/8/8/8/7P/K7 w - - 0 1", 4, {1, 5, 25, 161, 1035}, false},
+        {"3k4/3pp3/8/8/8/8/3PP3/3K4 w - - 0 1", 4, {1, 7, 49, 378, 2902}, false},
+        {"7k/8/8/p7/1P6/8/8/7K b - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"7k/8/p7/8/8/1P6/8/7K b - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"7k/8/8/1p6/P7/8/8/7K b - - 0 1", 4, {1, 5, 22, 139, 877}, false},
+        {"7k/8/1p6/8/8/P7/8/7K b - - 0 1", 4, {1, 4, 16, 101, 637}, false},
+        {"k7/7p/8/8/8/8/6P1/K7 b - - 0 1", 4, {1, 5, 25, 161, 1035}, false},
+        {"k7/6p1/8/8/8/8/7P/K7 b - - 0 1", 4, {1, 5, 25, 161, 1035}, false},
+        {"3k4/3pp3/8/8/8/8/3PP3/3K4 b - - 0 1", 4, {1, 7, 49, 378, 2902}, false},
+        {"8/Pk6/8/8/8/8/6Kp/8 w - - 0 1", 4, {1, 11, 97, 887, 8048}, false},
+        {"n1n5/1Pk5/8/8/8/8/5Kp1/5N1N w - - 0 1", 4, {1, 24, 421, 7421, 124608}, false},
+        {"8/PPPk4/8/8/8/8/4Kppp/8 w - - 0 1", 4, {1, 18, 270, 4699, 79355}, false},
+        {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N w - - 0 1", 4, {1, 24, 496, 9483, 182838}, false},
+        {"8/Pk6/8/8/8/8/6Kp/8 b - - 0 1", 4, {1, 11, 97, 887, 8048}, false},
+        {"n1n5/1Pk5/8/8/8/8/5Kp1/5N1N b - - 0 1", 4, {1, 24, 421, 7421, 124608}, false},
+        {"8/PPPk4/8/8/8/8/4Kppp/8 b - - 0 1", 4, {1, 18, 270, 4699, 79355}, false},
+        {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 4, {1, 24, 496, 9483, 182838}, false},
+    };
+
+    */
 
     for (const auto& test : test_cases) {
         board_t board;
@@ -155,13 +203,6 @@ void run_perft_suite() {
         for (int depth = 0; depth <= test.max_depth; depth++) {
 
             auto [result_int, move_breakdown] = perft(board, depth, board.active_color, test.single_color_scenario);
-
-            // Print the move breakdown if depth == 2
-            // if (depth == 2) {
-            //     for (const auto& [move_str, count] : move_breakdown) {
-            //         cout << move_str << ": " << count << endl;
-            //     }
-            // }
 
             total_node_sum += result_int;
             bool passed = result_int == test.expected_nodes[depth];
@@ -846,6 +887,46 @@ void test_move_generation_in_check() {
     }
 }
 
+void test_check_after_pawn_promotion_capture() {
+    board_t board;
+    // Initialize empty board first
+    board.initialize_board_from_fen("8/8/8/8/8/8/4K1p1/5N2 b - - 0 1");
+    board.pretty_print_board();
+
+    // Make the pawn capture and promote to bishop
+    move_t promotion_capture{6, 1, 5, 0, PieceType::BISHOP};
+    piece_t captured = moves::make_move(board, promotion_capture);
+    board.pretty_print_board();
+
+    // Debug prints
+    cout << "Promoted piece type: " << static_cast<int>(board.at(5, 0).piece.type) << endl;
+    cout << "Promoted piece color: " << static_cast<int>(board.at(5, 0).piece.color) << endl;
+
+    // Test if square f1 to e2 is a valid attacking line
+    vector<square_t> attack_line = moves::line(board, move_t{5, 0, 4, 1, PieceType::EMPTY});
+    cout << "Squares between promoted piece and king: " << attack_line.size() << endl;
+
+    // Verify the king is in check
+    assert(moves::is_in_check(board, Color::WHITE));
+
+    // Get all legal moves for white
+    vector<move_t> legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
+
+    // Print all legal moves for debugging
+    cout << "Legal moves for White:" << endl;
+    for (const auto& move : legal_moves) {
+        cout << encode_move(move) << endl;
+    }
+
+    // Verify there are exactly 7 legal moves
+    assert(legal_moves.size() == 7);
+
+    // Undo the move and verify position is restored
+    moves::undo_move(board, promotion_capture, captured);
+    board.pretty_print_board();
+    assert(!moves::is_in_check(board, Color::WHITE));
+}
+
 void run_move_test_suite() {
     cout << "\nRunning move/undo move tests...\n"
          << endl;
@@ -873,6 +954,7 @@ void run_move_test_suite() {
     run_move_test("Pawn check direction", test_pawn_check_direction);
     run_move_test("Castling through check", test_castling_through_check);
     run_move_test("Move generation in check", test_move_generation_in_check);
+    run_move_test("Pawn promotion move into check", test_check_after_pawn_promotion_capture);
 }
 
 } // namespace tests

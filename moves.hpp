@@ -120,9 +120,10 @@ piece_t make_move(board_t& board, const move_t& move) {
     }
 
     // Make the actual move
-    to_square.piece = from_square.piece;
     if (move.promotion_type != PieceType::EMPTY) {
-        to_square.piece.type = move.promotion_type;
+        to_square.piece = piece_t(move.promotion_type, from_square.piece.color); // Create new piece
+    } else {
+        to_square.piece = from_square.piece; // Normal move
     }
     from_square.piece = piece_t{};
 
@@ -256,7 +257,7 @@ bool is_check_from_line(const board_t& board, const vector<square_t>& diagonal, 
 }
 
 bool is_in_check(const board_t& board, Color color) {
-    // find the king
+    // First find the king
     int k_x = -1, k_y = -1;
     for (const auto& square : board) {
         if (square.piece.type == PieceType::KING && square.piece.color == color) {
@@ -268,62 +269,72 @@ bool is_in_check(const board_t& board, Color color) {
     if (k_x == -1)
         return false; // no king found
 
-    // check for knights
-    const vector<array<int, 2>> knight_moves = {
-        {k_x + 1, k_y + 2}, {k_x - 1, k_y + 2}, {k_x + 1, k_y - 2}, {k_x - 1, k_y - 2}, {k_x + 2, k_y + 1}, {k_x - 2, k_y + 1}, {k_x + 2, k_y - 1}, {k_x - 2, k_y - 1}};
-    for (const auto& [x, y] : knight_moves) {
-        if (board.in_board(x, y) &&
-            board.at(x, y).piece.type == PieceType::KNIGHT &&
-            board.at(x, y).piece.color != color) {
-            return true;
+    // Check each direction for sliding pieces (rook, bishop, queen)
+    const array<pair<int, int>, 8> all_directions = {
+        // Diagonal directions
+        make_pair(1, 1), make_pair(1, -1), make_pair(-1, 1), make_pair(-1, -1),
+        // Straight directions
+        make_pair(0, 1), make_pair(0, -1), make_pair(1, 0), make_pair(-1, 0)};
+
+    for (const auto& [dx, dy] : all_directions) {
+        int x            = k_x + dx;
+        int y            = k_y + dy;
+        bool is_diagonal = dx != 0 && dy != 0;
+
+        while (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type != PieceType::EMPTY) {
+                if (piece.color != color) {
+                    if (is_diagonal && (piece.type == PieceType::BISHOP || piece.type == PieceType::QUEEN)) {
+                        return true;
+                    }
+                    if (!is_diagonal && (piece.type == PieceType::ROOK || piece.type == PieceType::QUEEN)) {
+                        return true;
+                    }
+                }
+                break; // blocked by any piece
+            }
+            x += dx;
+            y += dy;
         }
     }
 
-    // check diagonals for bishops and queens
-    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(8 - k_x, 8 - k_y), k_y + min(8 - k_x, 8 - k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 8 - k_y), k_y + min(k_x, 8 - k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(8 - k_x, k_y), k_y - min(8 - k_x, k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY});
+    // Check for knight threats
+    const array<pair<int, int>, 8> knight_moves = {
+        make_pair(2, 1), make_pair(2, -1), make_pair(-2, 1), make_pair(-2, -1),
+        make_pair(1, 2), make_pair(1, -2), make_pair(-1, 2), make_pair(-1, -2)};
 
-    for (const auto& diagonal : array<vector<square_t>, 4>{diagonal_ur, diagonal_ul, diagonal_dr, diagonal_dl}) {
-        if (is_check_from_line(board, diagonal, color, true)) {
-            return true;
-        }
-    }
-
-    // check straight lines for rooks and queens
-    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 8, PieceType::EMPTY});
-    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 8, k_y, PieceType::EMPTY});
-    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, -1, PieceType::EMPTY});
-    const vector<square_t> line_l = line(board, move_t{k_x, k_y, -1, k_y, PieceType::EMPTY});
-
-    for (const auto& straight_line : array<vector<square_t>, 4>{line_u, line_r, line_d, line_l}) {
-        if (is_check_from_line(board, straight_line, color, false)) {
-            return true;
-        }
-    }
-
-    // check for pawns threats
-    const vector<array<int, 2>> pawn_attacks =
-        (color == Color::WHITE)
-            ? vector<array<int, 2>>{{k_x + 1, k_y + 1}, {k_x - 1, k_y + 1}}
-            : vector<array<int, 2>>{{k_x + 1, k_y - 1}, {k_x - 1, k_y - 1}};
-
-    for (const auto& [x, y] : pawn_attacks) {
-        if (board.in_board(x, y)) { // Add board bounds check before accessing square
-            const square_t& square = board.at(x, y);
-            if (square.piece.type == PieceType::PAWN &&
-                square.piece.color != color) {
+    for (const auto& [dx, dy] : knight_moves) {
+        int x = k_x + dx;
+        int y = k_y + dy;
+        if (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type == PieceType::KNIGHT && piece.color != color) {
                 return true;
             }
         }
     }
 
-    // check for enemy king threats
-    const vector<array<int, 2>> king_moves = {
-        {k_x + 1, k_y + 1}, {k_x + 1, k_y}, {k_x + 1, k_y - 1}, {k_x, k_y - 1}, {k_x - 1, k_y - 1}, {k_x - 1, k_y}, {k_x - 1, k_y + 1}, {k_x, k_y + 1}};
+    // Check for pawn threats
+    const pair<int, int> pawn_attacks[] = {
+        make_pair(-1, color == Color::WHITE ? 1 : -1),
+        make_pair(1, color == Color::WHITE ? 1 : -1)};
 
-    for (const auto& [x, y] : king_moves) {
+    for (const auto& [dx, dy] : pawn_attacks) {
+        int x = k_x + dx;
+        int y = k_y + dy;
+        if (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type == PieceType::PAWN && piece.color != color) {
+                return true;
+            }
+        }
+    }
+
+    // Check for king threats (needed for some edge cases)
+    for (const auto& [dx, dy] : all_directions) {
+        int x = k_x + dx;
+        int y = k_y + dy;
         if (board.in_board(x, y)) {
             const piece_t& piece = board.at(x, y).piece;
             if (piece.type == PieceType::KING && piece.color != color) {
