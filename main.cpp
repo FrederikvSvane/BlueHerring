@@ -5,6 +5,7 @@
 #include "moves.hpp"
 #include "tests.hpp"
 #include <locale>
+#include <random>
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_example.txt
 {
@@ -20,18 +21,29 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     // tests::run_speed_test_suite();
     // tests::run_perft_suite();
 
+    // Initalising the board
     board_t board;
     board.initialize_starting_board();
-    board.pretty_print_board();
 
     vector<string> input_moves = read_moves_from_input_file(&input_file_name);
     for (auto& move : input_moves) {
         moves::make_move(board, parse_move(move));
     }
-    board.pretty_print_board();
 
-    string output_move = "e2e4";
-    write_move_to_output_file(&output_file_name, &output_move);
+    // Playing the moves from the input file
+    Color color_to_move = (input_moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
+    vector<move_t> all_moves = moves::generate_all_moves_for_color(board, color_to_move);
+
+    // Get a random index in range [0, all_moves.size()-1] (copied from the internet)
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> distrib(0, all_moves.size() - 1);
+    int random_int = distrib(gen);
+
+    // Write the random move to the output file
+    move_t random_move = all_moves[random_int];
+    string random_move_str = encode_move(random_move);
+    write_move_to_output_file(&output_file_name, &random_move_str);
 
     return 0;
 }
