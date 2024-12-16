@@ -29,7 +29,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     for (auto& move : input_moves) {
         moves::make_move(board, parse_move(move));
     }
-    board.pretty_print_board();
 
     // Playing the moves from the input file
     Color color_to_move = (input_moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
