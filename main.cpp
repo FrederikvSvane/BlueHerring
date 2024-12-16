@@ -29,6 +29,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     for (auto& move : input_moves) {
         moves::make_move(board, parse_move(move));
     }
+    board.pretty_print_board();
 
     // Playing the moves from the input file
     Color color_to_move = (input_moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
@@ -43,7 +44,10 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     // Write the random move to the output file
     move_t random_move = all_moves[random_int];
     string random_move_str = encode_move(random_move);
-    write_move_to_output_file(&output_file_name, &random_move_str);
+
+    // This is a function that appends the move to the input file
+    // For proper one-move output, use write_move_to_output_file()
+    append_move_to_input_file(&input_file_name, &random_move_str);
 
     return 0;
 }
