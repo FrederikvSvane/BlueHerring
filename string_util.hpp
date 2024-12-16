@@ -1,7 +1,5 @@
 #ifndef string_util_hpp
 #define string_util_hpp
-
-#include <ranges>
 #include <sstream>
 #include <string>
 #include <vector>

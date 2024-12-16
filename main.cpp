@@ -16,9 +16,22 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     string input_file_name  = argv[2];
     string output_file_name = argv[4];
 
-    tests::run_rules_test_suite();
-    tests::run_speed_test_suite();
-    tests::run_perft_suite();
+    // tests::run_rules_test_suite();
+    // tests::run_speed_test_suite();
+    // tests::run_perft_suite();
+
+    board_t board;
+    board.initialize_starting_board();
+    board.pretty_print_board();
+
+    vector<string> input_moves = read_moves_from_input_file(&input_file_name);
+    for (auto& move : input_moves) {
+        moves::make_move(board, parse_move(move));
+    }
+    board.pretty_print_board();
+
+    string output_move = "e2e4";
+    write_move_to_output_file(&output_file_name, &output_move);
 
     return 0;
 }
