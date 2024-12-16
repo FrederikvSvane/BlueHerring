@@ -4,6 +4,7 @@
 #include "move_t.hpp"
 #include <locale>
 #include "moves.hpp"
+#include "engine.hpp"
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_example.txt
 {
@@ -24,7 +25,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     board.pretty_print_board();
 
 
-
     // std::cout << "Starting position evaluation: " << eval::evaluate_position(board) << std::endl;
 
     vector<string> string_moves = read_moves_from_input_file(&input_file_name);
@@ -38,16 +38,18 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     }
 
     for (const move_t& move : moves) {
-        make_move(board, move);
+        moves::make_move(board, move);
     }
+
 
     board.pretty_print_board();
 
-    auto king_moves = get_piece_moves(board, 4, 0);
-    cout << "Testing king moves" << endl;
-    for (const move_t& move : king_moves) {
-        cout << move.to_x << " " << move.to_y << endl;
-    }
+    move_t best_move = eval::get_best_move(board, 3 , Color::WHITE);
+    cout << "Moving from: (" << best_move.from_x << "," << best_move.from_y << ") to: (" << best_move.to_x << "," << best_move.to_y << ")" << endl;
+
+    moves::make_move(board, best_move);
+
+    board.pretty_print_board();
 
     // cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY}) << std::endl;
     // std::cout << "Final position evaluation: " << eval::evaluate_position(board) << std::endl;

@@ -126,10 +126,11 @@ struct board_t {
 
     void pretty_print_board() {
         cout << endl;
-        cout << "  a b c d e f g h" << endl;
+        // cout << "  a b c d e f g h" << endl;
+        cout << "  0 1 2 3 4 5 6 7" << endl;
         for (int y = 7; y >= 0; y--) {
             // cout << y + 1 << " ";
-            cout << y + 1 << " ";
+            cout << y << " ";
             for (int x = 0; x < 8; x++) {
                 cout << at(x, y) << " ";
             }
