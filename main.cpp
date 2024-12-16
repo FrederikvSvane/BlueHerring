@@ -45,9 +45,8 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     move_t random_move = all_moves[random_int];
     string random_move_str = encode_move(random_move);
 
-    // This is a function that appends the move to the input file
-    // For proper one-move output, use write_move_to_output_file()
-    append_move_to_input_file(&input_file_name, &random_move_str);
+    // Writing the random move to the output file
+    write_move_to_output_file(&output_file_name, &random_move_str);
 
     return 0;
 }
