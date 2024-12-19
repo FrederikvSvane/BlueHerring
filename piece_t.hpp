@@ -23,6 +23,21 @@ enum class Color {
     BLACK
 };
 
+// Overload the ! operator for Color
+Color operator!(Color color) {
+    switch (color) {
+        case Color::WHITE:
+            return Color::BLACK;
+        case Color::BLACK:
+            return Color::WHITE;
+        case Color::NONE:
+            throw std::invalid_argument("Cannot negate Color::NONE");
+    }
+    throw std::invalid_argument("Invalid color value"); // Fallback for unexpected cases
+}
+
+
+
 struct piece_t {
     PieceType type;
     Color color;

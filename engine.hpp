@@ -16,24 +16,16 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
     return eval::evaluate_position(board);
   }
 
-  vector<move_t> possible_moves = moves::get_all_moves(board);
+  vector<move_t> possible_moves = moves::generate_all_moves_for_color(board, color);
   
   if (color == Color::WHITE) {
     int max_score = -(int)INFINITY;
 
     for (move_t move : possible_moves) {
-      if(board.at(move.from_x, move.from_y).piece.type == PieceType::ROOK){
-        cout << "Moving from: (" << move.from_x << "," << move.from_y << ") to: (" << move.to_x << "," << move.to_y << ")" << endl;
-        board.pretty_print_board();
-      }
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
-      if(board.at(move.to_x, move.to_y).piece.type == PieceType::ROOK){
-        board.pretty_print_board();
-      } 
-
-      // Calculate score of this branch
+      // Calculate score of this branch (maximize for white)
       int score = negamax(board, depth-1, alpha, beta, Color::BLACK);
       max_score = max(max_score,score);
       alpha = max(alpha, score);
@@ -56,7 +48,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
-      // 
+      // Calculate score of this branch (minimize for black)
       int score = negamax(board, depth-1, alpha, beta, Color::WHITE);
       min_score = min(min_score,score);
       alpha = min(alpha, score);
@@ -64,6 +56,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
       // Undo move from board
       moves::undo_move(board, move, cap_piece);
 
+      // Remove branch if it's irrelevant
       if (beta <= alpha) {
         break;
       }
@@ -86,10 +79,11 @@ move_t get_best_move(board_t &board, int depth, Color color) {
 
   move_t best_move = possible_moves[0];
 
-  if (color == Color::WHITE) {
+  if (color == Color::WHITE) { // Playing as white
     int best_score = -(int)INFINITY;
 
     for (move_t move : possible_moves) {
+
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
@@ -104,7 +98,7 @@ move_t get_best_move(board_t &board, int depth, Color color) {
       moves::undo_move(board, move, cap_piece);
     }
   }
-  else {
+  else { // Playing as black
     int best_score = (int)INFINITY;
 
     for (move_t move : possible_moves) {
@@ -113,7 +107,7 @@ move_t get_best_move(board_t &board, int depth, Color color) {
 
       int score = negamax(board, depth - 1, -(int)INFINITY, (int)INFINITY, !color);
 
-      if (score > best_score) {
+      if (score < best_score) {
         best_score = score;
         best_move = move;
       }
