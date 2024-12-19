@@ -20,3 +20,4 @@
 
 - Implementing random move choice, and commiting v1 of the engine, an engine playing legally but randomly
 - Fixing our file_util, fixing bugs here and there, and cleaning the remote repository
+- Commiting v2 of the engine, an engine search for the best move at depth 3
