@@ -32,27 +32,29 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     vector<move_t> moves        = translate_moves(string_moves);
 
     // // For printing the input file line by line (testing)
-    cout << endl;
-    cout << "Making the following moves:" << endl;
-    for (const string& move : string_moves) {
-        cout << move << endl;
-    }
+    // cout << endl;
+    // cout << "Making the following moves:" << endl;
+    // for (const string& move : string_moves) {
+    //     cout << move << endl;
+    // }
 
     for (const move_t& move : moves) {
         moves::make_move(board, move);
     }
 
 
-    board.pretty_print_board();
+    // board.pretty_print_board();
 
-    move_t best_move = eval::get_best_move(board, 3 , Color::WHITE);
-    cout << "Moving from: (" << best_move.from_x << "," << best_move.from_y << ") to: (" << best_move.to_x << "," << best_move.to_y << ")" << endl;
+    move_t best_move = eval::get_best_move(board, 3 , Color::BLACK);
+    string best_move_str = encode_move(best_move);
 
-    moves::make_move(board, best_move);
+    // cout << "Moving from: (" << best_move.from_x << "," << best_move.from_y << ") to: (" << best_move.to_x << "," << best_move.to_y << ")" << endl;
 
-    board.pretty_print_board();
+    // moves::make_move(board, best_move);
 
-    write_move_to_output_file(&output_file_name, &encode_move(best_move));
+    // board.pretty_print_board();
+
+    write_move_to_output_file(&output_file_name, &best_move_str);
 
     return 0;
 }
