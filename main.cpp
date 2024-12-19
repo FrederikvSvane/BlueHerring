@@ -47,7 +47,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     string random_move_str = encode_move(random_move);
 
     write_move_to_output_file(&output_file_name, &random_move_str);
-    // append_move_to_input_file(&input_file_name, &random_move_str);
 
     return 0;
 }
