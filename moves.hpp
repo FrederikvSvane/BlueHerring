@@ -5,54 +5,129 @@
 #include "board_t.hpp"
 #include "move_t.hpp"
 #include <array>
+#include <cmath>    //for absolute value
+#include <stdint.h> //had to include this, otherwise didn't compile on my pc
 #include <vector>
-#include <cmath>        //for absolute value
-#include <stdint.h>     //had to include this, otherwise didn't compile on my pc
 
-namespace moves{
+namespace moves {
 
 piece_t make_move(board_t& board, const move_t& move) {
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
 
-    // Infer whether the move is an en-passant or a castling move
-    bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
-    bool is_castling = (from_square.piece.type == PieceType::KING && (abs(from_square.x - to_square.x) == 2));
+    // Save current state before making the move
+    board_state current_state = {
+        board.white_king_side_castle,
+        board.white_queen_side_castle,
+        board.black_king_side_castle,
+        board.black_queen_side_castle,
+        board.en_passant_x,
+        board.en_passant_y};
+    board.state_history.push_back(current_state);
 
-    // Save captured piece before overwriting
-    piece_t captured_piece;
+    // Update castling rights if king moves
+    if (from_square.piece.type == PieceType::KING) {
+        if (from_square.piece.color == Color::WHITE) {
+            board.white_king_side_castle  = false;
+            board.white_queen_side_castle = false;
+        } else {
+            board.black_king_side_castle  = false;
+            board.black_queen_side_castle = false;
+        }
+    }
 
-    // SPECIAL CASE: EN PASSANT
+    // Update castling rights based on rook activity (check if we move or capture a rook)
+    if (from_square.piece.type == PieceType::ROOK || to_square.piece.type == PieceType::ROOK) {
+        // Check from_square
+        if (from_square.piece.type == PieceType::ROOK) {
+            if (from_square.x == 0) {
+                if (from_square.y == 0)
+                    board.white_queen_side_castle = false;
+                if (from_square.y == 7)
+                    board.black_queen_side_castle = false;
+            }
+            if (from_square.x == 7) {
+                if (from_square.y == 0)
+                    board.white_king_side_castle = false;
+                if (from_square.y == 7)
+                    board.black_king_side_castle = false;
+            }
+        }
+
+        // Check to_square
+        if (to_square.piece.type == PieceType::ROOK) {
+            if (to_square.x == 0) {
+                if (to_square.y == 0)
+                    board.white_queen_side_castle = false;
+                if (to_square.y == 7)
+                    board.black_queen_side_castle = false;
+            }
+            if (to_square.x == 7) {
+                if (to_square.y == 0)
+                    board.white_king_side_castle = false;
+                if (to_square.y == 7)
+                    board.black_king_side_castle = false;
+            }
+        }
+    }
+
+    // Save captured piece
+    piece_t captured_piece = to_square.piece;
+
+    // Handle special cases
+
+    bool is_pawn              = (from_square.piece.type == PieceType::PAWN);
+    bool is_diagonal_move     = (to_square.x != from_square.x);
+    bool is_target_empty      = (to_square.piece.type == PieceType::EMPTY);
+    bool matches_en_passant_x = (to_square.x == board.en_passant_x);
+    bool matches_en_passant_y = (to_square.y == board.en_passant_y);
+
+    bool is_en_passant = (is_pawn &&
+                          is_diagonal_move &&
+                          is_target_empty &&
+                          matches_en_passant_x &&
+                          matches_en_passant_y);
+
+    bool is_castling = (from_square.piece.type == PieceType::KING &&
+                        abs(from_square.x - to_square.x) == 2);
+
+    // Handle en passant capture
     if (is_en_passant) {
-        captured_piece                         = (from_square.piece.color == Color::WHITE) ? piece_t{PieceType::PAWN, Color::BLACK} : piece_t{PieceType::PAWN, Color::WHITE};
+        captured_piece                         = board.at(move.to_x, move.from_y).piece;
         board.at(move.to_x, move.from_y).piece = piece_t{};
-    } else {
-        captured_piece = to_square.piece;
     }
 
-    // SPECIAL CASE: CASTLING
-    // In this case, we need to 'manually' move the rook. The king movement will be handled by the general case
-    if (is_castling){
-        if(to_square.x == 6){       //right castling
-            make_move(board, move_t{7, from_square.y, 5, from_square.y, PieceType::EMPTY});
-        }
-        else if(to_square.x == 2){ //left castling
-            make_move(board, move_t{0, from_square.y, 3, from_square.y, PieceType::EMPTY});
+    // Handle castling rook movement
+    if (is_castling) {
+        if (move.to_x == 6) { // kingside
+            board.at(5, move.from_y).piece = board.at(7, move.from_y).piece;
+            board.at(7, move.from_y).piece = piece_t{};
+        } else if (move.to_x == 2) { // queenside
+            board.at(3, move.from_y).piece = board.at(0, move.from_y).piece;
+            board.at(0, move.from_y).piece = piece_t{};
         }
     }
 
-    to_square.piece = from_square.piece;
+    // Reset en passant target square
+    board.en_passant_x = -1;
+    board.en_passant_y = -1;
 
-    //SPECIAL CASE: PROMOTION
+    // Set en passant target square if pawn double move
+    if (from_square.piece.type == PieceType::PAWN &&
+        abs(move.to_y - move.from_y) == 2) { // this works because the pawn can only move 2 squares from the starting position (so we dont need to check where it is)
+        board.en_passant_x = move.to_x;
+        board.en_passant_y = (move.from_y + move.to_y) / 2;
+    }
+
+    // Make the actual move
     if (move.promotion_type != PieceType::EMPTY) {
-        to_square.piece.type  = move.promotion_type;
+        to_square.piece = piece_t(move.promotion_type, from_square.piece.color); // Create new piece
+    } else {
+        to_square.piece = from_square.piece; // Normal move
     }
-
     from_square.piece = piece_t{};
 
     board.history.push_back(move);
-
-    //TODO: Adapt moves for special moves
     return captured_piece;
 }
 
@@ -60,41 +135,58 @@ void undo_move(board_t& board, const move_t& move, const piece_t& captured_piece
     square_t& from_square = board.at(move.from_x, move.from_y);
     square_t& to_square   = board.at(move.to_x, move.to_y);
 
+    // Remove the move from move history (NOT the same as state history!)
     board.history.pop_back();
 
-    // Infer whether the move is an en-passant or a castling move
-    bool is_en_passant = (from_square.piece.type == PieceType::PAWN && to_square.x != from_square.x && to_square.piece.type == PieceType::EMPTY);
-    bool is_castling = (from_square.piece.type == PieceType::KING && (abs(from_square.x - to_square.x) == 2));
+    // Just an error detection
+    if (board.state_history.empty()) {
+        std::cout << "Error: Trying to pop board state history, when history is empty. This shouldnt happen" << endl;
+        exit(1);
+    }
+
+    // Restore previous state
+    board_state previous_state = board.state_history.back();
+    board.state_history.pop_back();
+
+    board.white_king_side_castle  = previous_state.white_king_side_castle;
+    board.white_queen_side_castle = previous_state.white_queen_side_castle;
+    board.black_king_side_castle  = previous_state.black_king_side_castle;
+    board.black_queen_side_castle = previous_state.black_queen_side_castle;
+    board.en_passant_x            = previous_state.en_passant_x;
+    board.en_passant_y            = previous_state.en_passant_y;
+
+    bool is_en_passant = (to_square.piece.type == PieceType::PAWN &&
+                          move.from_x != move.to_x &&
+                          move.to_x == board.en_passant_x &&
+                          move.to_y == board.en_passant_y);
+
+    bool is_castling = (to_square.piece.type == PieceType::KING &&
+                        abs(move.from_x - move.to_x) == 2);
 
     // Move the piece back
     from_square.piece = to_square.piece;
-
-    // If it was a promotion, restore the original piece type (PAWN)
     if (move.promotion_type != PieceType::EMPTY) {
         from_square.piece.type = PieceType::PAWN;
     }
-
-    // Clear the destination square
     to_square.piece = piece_t{};
 
-    // If it was castling, restore rook position
-    if (is_castling){
-        if(to_square.x == 6){       //right castling
-            make_move(board, move_t{5, from_square.y, 7, from_square.y, PieceType::EMPTY});
-        }
-        else if(to_square.x == 2){ //left castling
-            make_move(board, move_t{3, from_square.y, 0, from_square.y, PieceType::EMPTY});
+    // Restore castling rook position
+    if (is_castling) {
+        if (move.to_x == 6) { // kingside
+            board.at(7, move.from_y).piece = board.at(5, move.from_y).piece;
+            board.at(5, move.from_y).piece = piece_t{};
+        } else if (move.to_x == 2) { // queenside
+            board.at(0, move.from_y).piece = board.at(3, move.from_y).piece;
+            board.at(3, move.from_y).piece = piece_t{};
         }
     }
 
-    // Restore the captured piece
+    // Restore captured piece
     if (is_en_passant) {
         board.at(move.to_x, move.from_y).piece = captured_piece;
     } else {
         to_square.piece = captured_piece;
     }
-
-    // TODO: handle castling
 }
 
 // returns a vector of the squares that a sliding move goes through, excluding the from- and to- squares of the move!
@@ -165,7 +257,7 @@ bool is_check_from_line(const board_t& board, const vector<square_t>& diagonal, 
 }
 
 bool is_in_check(const board_t& board, Color color) {
-    // find the king
+    // First find the king
     int k_x = -1, k_y = -1;
     for (const auto& square : board) {
         if (square.piece.type == PieceType::KING && square.piece.color == color) {
@@ -177,49 +269,77 @@ bool is_in_check(const board_t& board, Color color) {
     if (k_x == -1)
         return false; // no king found
 
-    // check for knights
-    const vector<array<int, 2>> knight_moves = {
-        {k_x + 1, k_y + 2}, {k_x - 1, k_y + 2}, {k_x + 1, k_y - 2}, {k_x - 1, k_y - 2}, {k_x + 2, k_y + 1}, {k_x - 2, k_y + 1}, {k_x + 2, k_y - 1}, {k_x - 2, k_y - 1}};
-    for (const auto& [x, y] : knight_moves) {
-        if (board.in_board(x, y) &&
-            board.at(x, y).piece.type == PieceType::KNIGHT &&
-            board.at(x, y).piece.color != color) {
-            return true;
+    // Check each direction for sliding pieces (rook, bishop, queen)
+    const array<pair<int, int>, 8> all_directions = {
+        // Diagonal directions
+        make_pair(1, 1), make_pair(1, -1), make_pair(-1, 1), make_pair(-1, -1),
+        // Straight directions
+        make_pair(0, 1), make_pair(0, -1), make_pair(1, 0), make_pair(-1, 0)};
+
+    for (const auto& [dx, dy] : all_directions) {
+        int x            = k_x + dx;
+        int y            = k_y + dy;
+        bool is_diagonal = dx != 0 && dy != 0;
+
+        while (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type != PieceType::EMPTY) {
+                if (piece.color != color) {
+                    if (is_diagonal && (piece.type == PieceType::BISHOP || piece.type == PieceType::QUEEN)) {
+                        return true;
+                    }
+                    if (!is_diagonal && (piece.type == PieceType::ROOK || piece.type == PieceType::QUEEN)) {
+                        return true;
+                    }
+                }
+                break; // blocked by any piece
+            }
+            x += dx;
+            y += dy;
         }
     }
 
-    // check diagonals for bishops and queens
-    const vector<square_t> diagonal_ur = line(board, move_t{k_x, k_y, k_x + min(8 - k_x, 8 - k_y), k_y + min(8 - k_x, 8 - k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_ul = line(board, move_t{k_x, k_y, k_x - min(k_x, 8 - k_y), k_y + min(k_x, 8 - k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_dr = line(board, move_t{k_x, k_y, k_x + min(8 - k_x, k_y), k_y - min(8 - k_x, k_y), PieceType::EMPTY});
-    const vector<square_t> diagonal_dl = line(board, move_t{k_x, k_y, k_x - min(k_x, k_y), k_y - min(k_x, k_y), PieceType::EMPTY});
+    // Check for knight threats
+    const array<pair<int, int>, 8> knight_moves = {
+        make_pair(2, 1), make_pair(2, -1), make_pair(-2, 1), make_pair(-2, -1),
+        make_pair(1, 2), make_pair(1, -2), make_pair(-1, 2), make_pair(-1, -2)};
 
-    for (const auto& diagonal : array<vector<square_t>, 4>{diagonal_ur, diagonal_ul, diagonal_dr, diagonal_dl}) {
-        if (is_check_from_line(board, diagonal, color, true)) {
-            return true;
+    for (const auto& [dx, dy] : knight_moves) {
+        int x = k_x + dx;
+        int y = k_y + dy;
+        if (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type == PieceType::KNIGHT && piece.color != color) {
+                return true;
+            }
         }
     }
 
-    // check straight lines for rooks and queens
-    const vector<square_t> line_u = line(board, move_t{k_x, k_y, k_x, 8, PieceType::EMPTY});
-    const vector<square_t> line_r = line(board, move_t{k_x, k_y, 8, k_y, PieceType::EMPTY});
-    const vector<square_t> line_d = line(board, move_t{k_x, k_y, k_x, -1, PieceType::EMPTY});
-    const vector<square_t> line_l = line(board, move_t{k_x, k_y, -1, k_y, PieceType::EMPTY});
+    // Check for pawn threats
+    const pair<int, int> pawn_attacks[] = {
+        make_pair(-1, color == Color::WHITE ? 1 : -1),
+        make_pair(1, color == Color::WHITE ? 1 : -1)};
 
-    for (const auto& straight_line : array<vector<square_t>, 4>{line_u, line_r, line_d, line_l}) {
-        if (is_check_from_line(board, straight_line, color, false)) {
-            return true;
+    for (const auto& [dx, dy] : pawn_attacks) {
+        int x = k_x + dx;
+        int y = k_y + dy;
+        if (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type == PieceType::PAWN && piece.color != color) {
+                return true;
+            }
         }
     }
 
-    // check for pawns
-    const vector<array<int, 2>> pawn_attacks = (color == Color::WHITE) ? vector<array<int, 2>>{{k_x + 1, k_y + 1}, {k_x - 1, k_y + 1}} : vector<array<int, 2>>{{k_x + 1, k_y - 1}, {k_x - 1, k_y - 1}};
-
-    for (const auto& [x, y] : pawn_attacks) {
-        if (board.in_board(x, y) &&
-            board.at(x, y).piece.type == PieceType::PAWN &&
-            board.at(x, y).piece.color != color) {
-            return true;
+    // Check for king threats (needed for some edge cases)
+    for (const auto& [dx, dy] : all_directions) {
+        int x = k_x + dx;
+        int y = k_y + dy;
+        if (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type == PieceType::KING && piece.color != color) {
+                return true;
+            }
         }
     }
 
@@ -297,19 +417,11 @@ vector<move_t> get_pawn_moves(const board_t& board, int x, int y) {
     }
 
     // en-passant
-    if (board.history.size() >= 1) {
-        move_t previous_move = board.history.back();
-        if ((own_color == Color::WHITE && y == 4) || (own_color == Color::BLACK && y == 3)) {
-            // the to-be-capturing pawn has advanced exactly three ranks
-            for (int dx : {-1, 1}) {
-                if (board.in_board(x + dx, y) && board.at(x + dx, y).piece.type == PieceType::PAWN && board.at(x + dx, y).piece.color != own_color) {
-                    if (previous_move.from_x == x + dx && previous_move.from_y == y + 2 * direction && previous_move.to_x == x + dx && previous_move.to_y == y) {
-                        // the to-be-captured pawn has moved two squares in one move, landing right next to the to-be-capturing pawn, in the previous move
-                        moves.push_back(move_t{x, y, x + dx, y + direction, PieceType::EMPTY});
-                    }
-                }
-            }
-        }
+    if (board.en_passant_x == x + 1 && board.en_passant_y == y + direction) {
+        moves.push_back(move_t{x, y, x + 1, y + direction, PieceType::EMPTY});
+    }
+    if (board.en_passant_x == x - 1 && board.en_passant_y == y + direction) {
+        moves.push_back(move_t{x, y, x - 1, y + direction, PieceType::EMPTY});
     }
 
     return moves;
@@ -408,20 +520,106 @@ vector<move_t> get_queen_moves(const board_t& board, int x, int y) {
     return line_moves;
 }
 
-static bool has_moved(const board_t& board, int x, int y){
-    //Checks whether any move including x,y has ever been made:
-    for(const auto& move_t : board.history){
-        if((move_t.from_x == x && move_t.from_y == y) || (move_t.to_x == x && move_t.to_y == y)){
+static bool has_moved(const board_t& board, int x, int y) {
+    // Checks whether any move including x,y has ever been made:
+    for (const auto& move_t : board.history) {
+        if ((move_t.from_x == x && move_t.from_y == y) || (move_t.to_x == x && move_t.to_y == y)) {
             return true;
         }
     }
     return false;
 }
 
+bool is_square_attacked(const board_t& board, int target_x, int target_y, Color attacking_color) {
+    // Check pawn attacks
+    int pawn_direction = (attacking_color == Color::WHITE) ? 1 : -1;
+    // Check both diagonal captures
+    for (int dx : {-1, 1}) {
+        int px = target_x + dx;
+        int py = target_y - pawn_direction;
+        if (board.in_board(px, py)) {
+            const piece_t& piece = board.at(px, py).piece;
+            if (piece.type == PieceType::PAWN && piece.color == attacking_color) {
+                return true;
+            }
+        }
+    }
+
+    // Check knight attacks
+    vector<array<int, 2>> knight_offsets = {
+        {-2, -1}, {-2, 1}, {2, -1}, {2, 1}, {-1, -2}, {1, -2}, {-1, 2}, {1, 2}};
+    for (const auto& [dx, dy] : knight_offsets) {
+        int nx = target_x + dx;
+        int ny = target_y + dy;
+        if (board.in_board(nx, ny)) {
+            const piece_t& piece = board.at(nx, ny).piece;
+            if (piece.type == PieceType::KNIGHT && piece.color == attacking_color) {
+                return true;
+            }
+        }
+    }
+
+    // Check diagonal attacks (bishop/queen)
+    vector<array<int, 2>> diagonals = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+    for (const auto& [dx, dy] : diagonals) {
+        int x = target_x + dx;
+        int y = target_y + dy;
+        while (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type != PieceType::EMPTY) {
+                if (piece.color == attacking_color &&
+                    (piece.type == PieceType::BISHOP || piece.type == PieceType::QUEEN)) {
+                    return true;
+                }
+                break;
+            }
+            x += dx;
+            y += dy;
+        }
+    }
+
+    // Check horizontal/vertical attacks (rook/queen)
+    vector<array<int, 2>> straight = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    for (const auto& [dx, dy] : straight) {
+        int x = target_x + dx;
+        int y = target_y + dy;
+        while (board.in_board(x, y)) {
+            const piece_t& piece = board.at(x, y).piece;
+            if (piece.type != PieceType::EMPTY) {
+                if (piece.color == attacking_color &&
+                    (piece.type == PieceType::ROOK || piece.type == PieceType::QUEEN)) {
+                    return true;
+                }
+                break;
+            }
+            x += dx;
+            y += dy;
+        }
+    }
+
+    // Check king attacks (for adjacent squares)
+    vector<array<int, 2>> king_offsets = {
+        {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+    for (const auto& [dx, dy] : king_offsets) {
+        int kx = target_x + dx;
+        int ky = target_y + dy;
+        if (board.in_board(kx, ky)) {
+            const piece_t& piece = board.at(kx, ky).piece;
+            if (piece.type == PieceType::KING && piece.color == attacking_color) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 vector<move_t> get_king_moves(const board_t& board, int x, int y) {
     vector<move_t> moves;
-    Color own_color = board.at(x, y).piece.color;
+    Color own_color   = board.at(x, y).piece.color;
+    Color enemy_color = (own_color == Color::WHITE) ? Color::BLACK : Color::WHITE;
 
+    // Normal king moves
     vector<array<int, 2>> offsets = {
         {x + 1, y + 1}, {x + 1, y}, {x + 1, y - 1}, {x, y - 1}, {x - 1, y - 1}, {x - 1, y}, {x - 1, y + 1}, {x, y + 1}};
 
@@ -431,21 +629,74 @@ vector<move_t> get_king_moves(const board_t& board, int x, int y) {
         }
     }
 
-    // CASTLING MOVES:
-    int y_coor = (own_color == Color::WHITE) ? 0 : 7;
-    if(has_moved(board, 4, y_coor) == false){
-        if(has_moved(board, 0, y_coor) == false){    // we could left castle, as long as no pieces are in between
-            if(board.at(1, y_coor).piece.type == PieceType::EMPTY &&
-               board.at(2, y_coor).piece.type == PieceType::EMPTY && 
-               board.at(3, y_coor).piece.type == PieceType::EMPTY){
-                    moves.push_back(move_t{x, y, 2, y_coor, PieceType::EMPTY});
+    // Castling moves
+    if (own_color == Color::WHITE) {
+        // Check if king is in check
+        if (!is_in_check(board, Color::WHITE)) {
+            // Kingside castle
+            if (board.white_king_side_castle) {
+                if (board.at(5, 0).piece.type == PieceType::EMPTY &&
+                    board.at(6, 0).piece.type == PieceType::EMPTY) {
+
+                    // Check if squares are attacked
+                    bool f1_attacked = is_square_attacked(board, 5, 0, enemy_color);
+                    bool g1_attacked = is_square_attacked(board, 6, 0, enemy_color);
+
+                    if (!f1_attacked && !g1_attacked) {
+                        moves.push_back(move_t{4, 0, 6, 0, PieceType::EMPTY});
+                    }
+                }
+            }
+
+            // Queenside castle
+            if (board.white_queen_side_castle) {
+                if (board.at(1, 0).piece.type == PieceType::EMPTY &&
+                    board.at(2, 0).piece.type == PieceType::EMPTY &&
+                    board.at(3, 0).piece.type == PieceType::EMPTY) {
+
+                    // Check if squares are attacked
+                    bool d1_attacked = is_square_attacked(board, 3, 0, enemy_color);
+                    bool c1_attacked = is_square_attacked(board, 2, 0, enemy_color);
+
+                    if (!d1_attacked && !c1_attacked) {
+                        moves.push_back(move_t{4, 0, 2, 0, PieceType::EMPTY});
+                    }
+                }
             }
         }
-        if(has_moved(board, 7, y_coor) == false){    // we could right castle, as long as no pieces are in between
-            if(board.at(5, y_coor).piece.type == PieceType::EMPTY &&
-                board.at(6, y_coor).piece.type == PieceType::EMPTY){
-                    moves.push_back(move_t{x, y, 6, y_coor, PieceType::EMPTY});
+    } else {
+        // Check if king is in check
+        if (!is_in_check(board, Color::BLACK)) {
+            // Kingside castle
+            if (board.black_king_side_castle) {
+                if (board.at(5, 7).piece.type == PieceType::EMPTY &&
+                    board.at(6, 7).piece.type == PieceType::EMPTY) {
+
+                    // Check if squares are attacked
+                    bool f8_attacked = is_square_attacked(board, 5, 7, enemy_color);
+                    bool g8_attacked = is_square_attacked(board, 6, 7, enemy_color);
+
+                    if (!f8_attacked && !g8_attacked) {
+                        moves.push_back(move_t{4, 7, 6, 7, PieceType::EMPTY});
+                    }
                 }
+            }
+
+            // Queenside castle
+            if (board.black_queen_side_castle) {
+                if (board.at(1, 7).piece.type == PieceType::EMPTY &&
+                    board.at(2, 7).piece.type == PieceType::EMPTY &&
+                    board.at(3, 7).piece.type == PieceType::EMPTY) {
+
+                    // Check if squares are attacked
+                    bool d8_attacked = is_square_attacked(board, 3, 7, enemy_color);
+                    bool c8_attacked = is_square_attacked(board, 2, 7, enemy_color);
+
+                    if (!d8_attacked && !c8_attacked) {
+                        moves.push_back(move_t{4, 7, 2, 7, PieceType::EMPTY});
+                    }
+                }
+            }
         }
     }
 

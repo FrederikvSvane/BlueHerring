@@ -4,21 +4,51 @@
 #include "operators_util.hpp"
 #include "piece_t.hpp"
 #include "square_t.hpp"
+#include "string_util.hpp"
 #include <array>
 #include <iostream>
 
 using namespace std;
 
+struct board_state {
+    bool white_king_side_castle;
+    bool white_queen_side_castle;
+    bool black_king_side_castle;
+    bool black_queen_side_castle;
+    int en_passant_x;
+    int en_passant_y;
+};
+
 struct board_t {
     array<square_t, 64> board;
     vector<move_t> history;
+    vector<board_state> state_history; // Track historical states
+    Color active_color;                // whose turn it is (used for testing)
+
+    // Current state
+    bool white_king_side_castle;
+    bool white_queen_side_castle;
+    bool black_king_side_castle;
+    bool black_queen_side_castle;
+    int en_passant_x;
+    int en_passant_y;
 
     board_t() {
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 at(x, y) = square_t();
             }
+            active_color = Color::WHITE;
         }
+        // Initialize castling rights
+        white_king_side_castle  = true;
+        white_queen_side_castle = true;
+        black_king_side_castle  = true;
+        black_queen_side_castle = true;
+
+        // Initialize en passant (no target square initially)
+        en_passant_x = -1;
+        en_passant_y = -1;
     }
 
     static constexpr inline int index(int x, int y) {
@@ -80,7 +110,7 @@ struct board_t {
         }
     }
 
-    void initialize_board_from_fen(const string& fen) { // fen as in fen notation (way to describe a whole chess board in one string)
+    void initialize_board_from_fen(const string& fen) {
         // First initialize all squares with coordinates and empty pieces
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
@@ -89,9 +119,12 @@ struct board_t {
                 at(x, y).piece = piece_t(PieceType::EMPTY, Color::NONE);
             }
         }
-        int x = 0, y = 7; // start from top row
 
-        for (char c : fen) {
+        vector<string> fen_parts = split(fen, ' ');
+
+        const string& position = fen_parts[0]; // Only use the first part for piece placement
+        int x = 0, y = 7;                      // start from top row
+        for (char c : position) {              // Only parse the piece placement section
             if (c == '/') {
                 x = 0;
                 y--;
@@ -122,12 +155,44 @@ struct board_t {
             at(x, y).y     = y;
             x++;
         }
+
+        // Reset castling rights first
+        white_king_side_castle  = false;
+        white_queen_side_castle = false;
+        black_king_side_castle  = false;
+        black_queen_side_castle = false;
+
+        // Parse active color (second field)
+        if (fen_parts.size() > 1) {
+            active_color = (fen_parts[1] == "w") ? Color::WHITE : Color::BLACK;
+        } else {
+            active_color = Color::WHITE; // Default to white if not specified
+        }
+
+        if (fen_parts.size() > 2) {
+            // Set castling rights based on FEN
+            string castling = fen_parts[2];
+            if (castling != "-") {
+                white_king_side_castle  = castling.find('K') != string::npos;
+                white_queen_side_castle = castling.find('Q') != string::npos;
+                black_king_side_castle  = castling.find('k') != string::npos;
+                black_queen_side_castle = castling.find('q') != string::npos;
+            }
+
+            // Set en passant square if exists
+            if (fen_parts.size() > 3 && fen_parts[3] != "-") {
+                en_passant_x = fen_parts[3][0] - 'a';
+                en_passant_y = fen_parts[3][1] - '1';
+            } else {
+                en_passant_x = -1;
+                en_passant_y = -1;
+            }
+        }
     }
 
     void pretty_print_board() {
         cout << endl;
-        // cout << "  a b c d e f g h" << endl;
-        cout << "  0 1 2 3 4 5 6 7" << endl;
+        cout << "  a b c d e f g h" << endl;
         for (int y = 7; y >= 0; y--) {
             // cout << y + 1 << " ";
             cout << y << " ";
@@ -136,6 +201,50 @@ struct board_t {
             }
             cout << endl;
         }
+        cout << "\n"
+             << endl;
+    }
+
+    string format_castling(bool king_side, bool queen_side) const {
+        if (!king_side && !queen_side)
+            return "None";
+        string result;
+        if (queen_side)
+            result += "Q";
+        if (king_side)
+            result += "K";
+        return result;
+    }
+
+    string format_en_passant(int x, int y) const {
+        if (x == -1 || y == -1)
+            return "None";
+        return string(1, "abcdefgh"[x]) + to_string(y + 1);
+    }
+
+    void print_state(const board_state& state, int index) const {
+        cout << index << " = {wc: "
+             << format_castling(state.white_king_side_castle, state.white_queen_side_castle)
+             << ", bc: "
+             << format_castling(state.black_king_side_castle, state.black_queen_side_castle)
+             << ", en passant square: "
+             << format_en_passant(state.en_passant_x, state.en_passant_y)
+             << "}\n";
+    }
+
+    void print_state_history() const {
+        cout << "\nState History Stack (oldest to current):\n";
+        size_t i = 0;
+        for (; i < state_history.size(); ++i) {
+            print_state(state_history[i], i);
+        }
+        cout << i << " = {wc: "
+             << format_castling(white_king_side_castle, white_queen_side_castle)
+             << ", bc: "
+             << format_castling(black_king_side_castle, black_queen_side_castle)
+             << ", en passant square: "
+             << format_en_passant(en_passant_x, en_passant_y)
+             << "}\n\n";
     }
 
     class board_iterator_t { // to facilitate looping over the board, square by square, starting from the bottom left

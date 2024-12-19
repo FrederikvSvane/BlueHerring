@@ -32,14 +32,25 @@ Navigate to the directory and run the following commands:
 ./BlueHerring -H input.txt -m output_example.txt
 ```
 
+To play a game using the referee program used for this project (that you can install here https://github.com/julien-tierny/chess-referee-bin), run the following command:
+
+```
+chessGame -W <path to a chess program> -B <path to another chess program>
+```
+
+For example :
+```
+chessGame -W ./BlueHerring -B chessRandomPlayer
+```
+
 
 # Authors
 
 Charbonneau, Simon (simon.charbonneau@polytechnique.edu)
 
-Krause, Antonia Gerlach (email)
+Krause, Antonia Gerlach (antonia.gerlach-krause@polytechnique.edu)
 
-Losel (email)
+Losel (sherab-losel.matos@polytechnique.edu)
 
 Svane, Frederik (frederik.svane@polytechnique.edu)
 

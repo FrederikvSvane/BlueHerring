@@ -2,7 +2,6 @@
 #include "eval.hpp"
 #include "file_util.hpp"
 #include "move_t.hpp"
-#include <locale>
 #include "moves.hpp"
 #include "engine.hpp"
 
@@ -16,13 +15,15 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
     string input_file_name  = argv[2];
     string output_file_name = argv[4];
 
-    // tests::run_test_suite();
+    // create a new file called that and write the one move
 
-    // std::cout << "Starting position evaluation: " << eval::evaluate_position(board) << std::endl;
+    // tests::run_rules_test_suite();
+    // tests::run_speed_test_suite();
+    // tests::run_perft_suite();
 
-    board_t board{};
+    // Initalising the board
+    board_t board;
     board.initialize_starting_board();
-    board.pretty_print_board();
 
 
     // std::cout << "Starting position evaluation: " << eval::evaluate_position(board) << std::endl;
@@ -51,22 +52,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H input.txt -m output_e
 
     board.pretty_print_board();
 
-    // cout << board.is_in_check(Color::NONE) << ", " << board.is_move_legal(move_t{3, 1, 3, 2, PieceType::EMPTY}) << std::endl;
-    // std::cout << "Final position evaluation: " << eval::evaluate_position(board) << std::endl;
-
-    // move_t m = {7, 0, 0, 0, PieceType::BISHOP, false};
-    // printf("%i, %i\n", m.from_x, m.from_y);
-    // printf("%i, %i\n", m.to_x, m.to_y);
-
-    // std::cout << "Vector elements: ";
-    // for (square_t& element : board.line(m)) {
-    //     std::cout << element.x << "," << element.y << " ";
-    // }
-    // std::cout << std::endl;
-
-    // string best_move; // the magnum opus
-    // best_move = "e3e4";
-    // write_move_to_output_file(&output_file_name, &best_move);
+    write_move_to_output_file(&output_file_name, &encode_move(best_move));
 
     return 0;
 }

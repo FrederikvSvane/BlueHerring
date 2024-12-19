@@ -14,4 +14,9 @@
 
 ## Week 3
 
-- TODO
+- Debugging a looooot the move generation together with Frederik, and got a slight depression from doing that
+
+## Week 4
+
+- Implementing random move choice, and commiting v1 of the engine, an engine playing legally but randomly
+- Fixing our file_util, fixing bugs here and there, and cleaning the remote repository
