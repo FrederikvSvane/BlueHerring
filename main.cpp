@@ -25,6 +25,13 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     board_t board;
     board.initialize_starting_board();
 
+    bitboard_t bitboard;
+    bitboard.initialize_starting_board();
+
+    board.pretty_print_board();
+    bitboard.pretty_print_board();
+
+
     // std::cout << "Starting position evaluation: " << eval::evaluate_position(board) << std::endl;
 
     vector<string> string_moves = read_moves_from_input_file(&input_file_name);
@@ -32,7 +39,11 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
 
     for (const move_t& move : moves) {
         moves::make_move(board, move);
+        bit_moves::make_move(bitboard, move);
     }
+
+    board.pretty_print_board();
+    bitboard.pretty_print_board();
 
     Color color_to_move = (moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
 

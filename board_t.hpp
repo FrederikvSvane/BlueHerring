@@ -8,6 +8,9 @@
 #include <array>
 #include <iostream>
 
+// This is the datatype of the bitboard
+using U64 = unsigned long long;
+
 using namespace std;
 
 struct board_state {
@@ -18,6 +21,93 @@ struct board_state {
     int en_passant_x;
     int en_passant_y;
 };
+
+struct bitboard_t {
+
+    // LSB represents the square A1, MSB represents H8
+
+    // Define the bitboards for white and black, for each piece type
+    U64 board_w_K;
+    U64 board_w_Q;
+    U64 board_w_P;
+    U64 board_w_N;
+    U64 board_w_B;
+    U64 board_w_R;
+
+    U64 board_b_K;
+    U64 board_b_Q;
+    U64 board_b_P;
+    U64 board_b_N;
+    U64 board_b_B;
+    U64 board_b_R;
+
+    vector<move_t> history;
+    vector<board_state> state_history; // TODO: Implement this
+
+    inline U64 square_to_bit(int square) {
+        return 1ULL << square;
+    }
+
+    void pretty_print_board() {
+        cout << endl;
+        cout << "  a b c d e f g h" << endl;
+        for (int x = 7; x >= 0; x--) {
+            // cout << y + 1 << " ";
+            cout << x << " ";
+            for (int y = 0; y < 8; y++) {
+                cout << at(x*8 + y) << " ";
+            }
+            cout << endl;
+        }
+        cout << "\n" << endl;
+    }
+
+    square_t at(int bit) { // Pass an index (0-63) and convert to bitboard
+        if (bit < 0 || bit >= 64) {
+            throw std::out_of_range("Bit index must be in range [0, 63].");
+        }
+
+        U64 pos = square_to_bit(bit); // Convert index to bitboard
+
+        // White
+        if (board_w_P & pos) return {bit % 8, bit / 8, false, {PieceType::PAWN, Color::WHITE}};
+        if (board_w_N & pos) return {bit % 8, bit / 8, false, {PieceType::KNIGHT, Color::WHITE}};
+        if (board_w_B & pos) return {bit % 8, bit / 8, false, {PieceType::BISHOP, Color::WHITE}};
+        if (board_w_R & pos) return {bit % 8, bit / 8, false, {PieceType::ROOK, Color::WHITE}};
+        if (board_w_Q & pos) return {bit % 8, bit / 8, false, {PieceType::QUEEN, Color::WHITE}};
+        if (board_w_K & pos) return {bit % 8, bit / 8, false, {PieceType::KING, Color::WHITE}};
+
+        // Black
+        if (board_b_P & pos) return {bit % 8, bit / 8, false, {PieceType::PAWN, Color::BLACK}};
+        if (board_b_N & pos) return {bit % 8, bit / 8, false, {PieceType::KNIGHT, Color::BLACK}};
+        if (board_b_B & pos) return {bit % 8, bit / 8, false, {PieceType::BISHOP, Color::BLACK}};
+        if (board_b_R & pos) return {bit % 8, bit / 8, false, {PieceType::ROOK, Color::BLACK}};
+        if (board_b_Q & pos) return {bit % 8, bit / 8, false, {PieceType::QUEEN, Color::BLACK}};
+        if (board_b_K & pos) return {bit % 8, bit / 8, false, {PieceType::KING, Color::BLACK}};
+
+        // No piece is found, return empty square
+        return {bit % 8, bit / 8, false, {PieceType::EMPTY, Color::NONE}};
+    }
+
+    void initialize_starting_board() {
+        // White
+        board_w_P = 0x000000000000FF00ULL; 
+        board_w_R = 0x0000000000000081ULL; 
+        board_w_N = 0x0000000000000042ULL; 
+        board_w_B = 0x0000000000000024ULL; 
+        board_w_Q = 0x0000000000000008ULL; 
+        board_w_K = 0x0000000000000010ULL; 
+
+        // Black
+        board_b_P = 0x00FF000000000000ULL; 
+        board_b_R = 0x8100000000000000ULL; 
+        board_b_N = 0x4200000000000000ULL; 
+        board_b_B = 0x2400000000000000ULL; 
+        board_b_Q = 0x0800000000000000ULL; 
+        board_b_K = 0x1000000000000000ULL; 
+    }
+};
+
 
 struct board_t {
     array<square_t, 64> board;
@@ -201,8 +291,7 @@ struct board_t {
             }
             cout << endl;
         }
-        cout << "\n"
-             << endl;
+        cout << "\n" << endl;
     }
 
     string format_castling(bool king_side, bool queen_side) const {

@@ -9,6 +9,124 @@
 #include <stdint.h> //had to include this, otherwise didn't compile on my pc
 #include <vector>
 
+namespace bit_moves {
+    piece_t make_move(bitboard_t& board, const move_t& move) { // In the future, a move_t could simply be two bits, or a bitboard with the from/to bits set to 1
+        // Convert from/to coordinates to bit indices
+        int from_index = move.from_y * 8 + move.from_x;
+        int to_index = move.to_y * 8 + move.to_x;
+
+        // Create bitboards for the source and destination squares
+        U64 from_bit = board.square_to_bit(from_index);
+        U64 to_bit = board.square_to_bit(to_index);
+
+        // Determine piece & color
+        PieceType moving_piece = board.at(from_index).piece.type;
+        Color moving_color = board.at(from_index).piece.color;
+
+        if (moving_piece == PieceType::EMPTY || moving_color == Color::NONE) {
+            throw std::invalid_argument("No piece to move at the source square.");
+        }
+
+        // Determine the relevant bitboard for the piece being moved
+        U64* piece_board = nullptr;
+        if (moving_color == Color::WHITE) {
+            if (moving_piece == PieceType::PAWN) piece_board = &board.board_w_P;
+            else if (moving_piece == PieceType::KNIGHT) piece_board = &board.board_w_N;
+            else if (moving_piece == PieceType::BISHOP) piece_board = &board.board_w_B;
+            else if (moving_piece == PieceType::ROOK) piece_board = &board.board_w_R;
+            else if (moving_piece == PieceType::QUEEN) piece_board = &board.board_w_Q;
+            else if (moving_piece == PieceType::KING) piece_board = &board.board_w_K;
+        } else {
+            if (moving_piece == PieceType::PAWN) piece_board = &board.board_b_P;
+            else if (moving_piece == PieceType::KNIGHT) piece_board = &board.board_b_N;
+            else if (moving_piece == PieceType::BISHOP) piece_board = &board.board_b_B;
+            else if (moving_piece == PieceType::ROOK) piece_board = &board.board_b_R;
+            else if (moving_piece == PieceType::QUEEN) piece_board = &board.board_b_Q;
+            else if (moving_piece == PieceType::KING) piece_board = &board.board_b_K;
+        }
+
+        if (!piece_board) {
+            throw std::runtime_error("Failed to determine the bitboard for the moving piece.");
+        }
+
+
+        // TODO: Save current state before making the move
+
+        // TODO: Update castling rights if king moves
+
+        // TODO: Update castling rights based on rook activity (check if we move or capture a rook)
+
+        // TODO: Check to_square
+
+        // Save captured piece
+
+        // TODO: Handle special cases
+
+        // TODO: Handle en passant capture
+
+        // TODO: Handle castling rook movement
+
+        // TODO: Reset en passant target square
+
+        // TODO: Set en passant target square if pawn double move
+
+        // Make the actual move: clear the source bit and set the destination bit
+        *piece_board &= ~from_bit;
+        *piece_board |= to_bit;
+
+        // Handle captures by clearing the destination square in all opponent bitboards
+        piece_t captured_piece = {PieceType::EMPTY, Color::NONE}; // Track the captured piece
+        U64* opponent_boards[] = {
+            &board.board_b_P, &board.board_b_N, &board.board_b_B,
+            &board.board_b_R, &board.board_b_Q, &board.board_b_K
+        };
+
+        if (moving_color == Color::BLACK) {
+            opponent_boards[0] = &board.board_w_P;
+            opponent_boards[1] = &board.board_w_N;
+            opponent_boards[2] = &board.board_w_B;
+            opponent_boards[3] = &board.board_w_R;
+            opponent_boards[4] = &board.board_w_Q;
+            opponent_boards[5] = &board.board_w_K;
+        }
+
+        for (int i = 0; i < 6; ++i) {
+            if (*opponent_boards[i] & to_bit) {
+                *opponent_boards[i] &= ~to_bit; // Clear the captured piece
+                captured_piece.type = static_cast<PieceType>(i + 1);
+                captured_piece.color = moving_color == Color::WHITE ? Color::BLACK : Color::WHITE;
+                break;
+            }
+        }
+
+        // Handle promotion if applicable
+        if (moving_piece == PieceType::PAWN && (move.to_y == 0 || move.to_y == 7)) {
+            if (move.promotion_type == PieceType::EMPTY) {
+                throw std::invalid_argument("Promotion type not specified for pawn promotion.");
+            }
+
+            // Remove the pawn from its bitboard
+            *piece_board &= ~to_bit;
+
+            // Add the promoted piece to the appropriate bitboard
+            if (moving_color == Color::WHITE) {
+                if (move.promotion_type == PieceType::QUEEN) board.board_w_Q |= to_bit;
+                else if (move.promotion_type == PieceType::ROOK) board.board_w_R |= to_bit;
+                else if (move.promotion_type == PieceType::BISHOP) board.board_w_B |= to_bit;
+                else if (move.promotion_type == PieceType::KNIGHT) board.board_w_N |= to_bit;
+            } else {
+                if (move.promotion_type == PieceType::QUEEN) board.board_b_Q |= to_bit;
+                else if (move.promotion_type == PieceType::ROOK) board.board_b_R |= to_bit;
+                else if (move.promotion_type == PieceType::BISHOP) board.board_b_B |= to_bit;
+                else if (move.promotion_type == PieceType::KNIGHT) board.board_b_N |= to_bit;
+            }
+        }
+
+        board.history.push_back(move);
+        return captured_piece;
+    }
+}
+
 namespace moves {
 
 piece_t make_move(board_t& board, const move_t& move) {
