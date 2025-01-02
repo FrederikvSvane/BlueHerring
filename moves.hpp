@@ -16,34 +16,19 @@ namespace bit_moves {
         int to_index = move.to_y * 8 + move.to_x;
 
         // Create bitboards for the source and destination squares
-        U64 from_bit = board.square_to_bit(from_index);
-        U64 to_bit = board.square_to_bit(to_index);
+        U64 from_bitmask = board.square_to_bit(from_index);
+        U64 to_bitmask = board.square_to_bit(to_index);
 
-        // Determine piece & color
-        PieceType moving_piece = board.at(from_index).piece.type;
-        Color moving_color = board.at(from_index).piece.color;
+        // Determine which piece is being moved
+        piece_t moving_piece = board.at(move.from_x, move.from_y).piece;
 
-        if (moving_piece == PieceType::EMPTY || moving_color == Color::NONE) {
+        if (moving_piece.type == PieceType::EMPTY || moving_piece.color == Color::NONE) {
             throw std::invalid_argument("No piece to move at the source square.");
         }
 
         // Determine the relevant bitboard for the piece being moved
         U64* piece_board = nullptr;
-        if (moving_color == Color::WHITE) {
-            if (moving_piece == PieceType::PAWN) piece_board = &board.board_w_P;
-            else if (moving_piece == PieceType::KNIGHT) piece_board = &board.board_w_N;
-            else if (moving_piece == PieceType::BISHOP) piece_board = &board.board_w_B;
-            else if (moving_piece == PieceType::ROOK) piece_board = &board.board_w_R;
-            else if (moving_piece == PieceType::QUEEN) piece_board = &board.board_w_Q;
-            else if (moving_piece == PieceType::KING) piece_board = &board.board_w_K;
-        } else {
-            if (moving_piece == PieceType::PAWN) piece_board = &board.board_b_P;
-            else if (moving_piece == PieceType::KNIGHT) piece_board = &board.board_b_N;
-            else if (moving_piece == PieceType::BISHOP) piece_board = &board.board_b_B;
-            else if (moving_piece == PieceType::ROOK) piece_board = &board.board_b_R;
-            else if (moving_piece == PieceType::QUEEN) piece_board = &board.board_b_Q;
-            else if (moving_piece == PieceType::KING) piece_board = &board.board_b_K;
-        }
+        piece_board = board.get_board_for_piece(moving_piece.type, moving_piece.color);
 
         if (!piece_board) {
             throw std::runtime_error("Failed to determine the bitboard for the moving piece.");
@@ -70,9 +55,9 @@ namespace bit_moves {
 
         // TODO: Set en passant target square if pawn double move
 
-        // Make the actual move: clear the source bit and set the destination bit
-        *piece_board &= ~from_bit;
-        *piece_board |= to_bit;
+        // Make the actual move
+        *piece_board &= ~from_bitmask; // Clears the source bit
+        *piece_board |= to_bitmask; // Sets the destination bit
 
         // Handle captures by clearing the destination square in all opponent bitboards
         piece_t captured_piece = {PieceType::EMPTY, Color::NONE}; // Track the captured piece
@@ -81,7 +66,7 @@ namespace bit_moves {
             &board.board_b_R, &board.board_b_Q, &board.board_b_K
         };
 
-        if (moving_color == Color::BLACK) {
+        if (moving_piece.color == Color::BLACK) {
             opponent_boards[0] = &board.board_w_P;
             opponent_boards[1] = &board.board_w_N;
             opponent_boards[2] = &board.board_w_B;
@@ -91,39 +76,107 @@ namespace bit_moves {
         }
 
         for (int i = 0; i < 6; ++i) {
-            if (*opponent_boards[i] & to_bit) {
-                *opponent_boards[i] &= ~to_bit; // Clear the captured piece
+            if (*opponent_boards[i] & to_bitmask) {
+                *opponent_boards[i] &= ~to_bitmask; // Clear the captured piece
                 captured_piece.type = static_cast<PieceType>(i + 1);
-                captured_piece.color = moving_color == Color::WHITE ? Color::BLACK : Color::WHITE;
+                captured_piece.color = !moving_piece.color;
                 break;
             }
         }
 
         // Handle promotion if applicable
-        if (moving_piece == PieceType::PAWN && (move.to_y == 0 || move.to_y == 7)) {
+        if (moving_piece.type == PieceType::PAWN && (move.to_y == 0 || move.to_y == 7)) {
             if (move.promotion_type == PieceType::EMPTY) {
                 throw std::invalid_argument("Promotion type not specified for pawn promotion.");
             }
 
             // Remove the pawn from its bitboard
-            *piece_board &= ~to_bit;
+            *piece_board &= ~to_bitmask;
 
             // Add the promoted piece to the appropriate bitboard
-            if (moving_color == Color::WHITE) {
-                if (move.promotion_type == PieceType::QUEEN) board.board_w_Q |= to_bit;
-                else if (move.promotion_type == PieceType::ROOK) board.board_w_R |= to_bit;
-                else if (move.promotion_type == PieceType::BISHOP) board.board_w_B |= to_bit;
-                else if (move.promotion_type == PieceType::KNIGHT) board.board_w_N |= to_bit;
+            if (moving_piece.color == Color::WHITE) {
+                if (move.promotion_type == PieceType::QUEEN) board.board_w_Q |= to_bitmask;
+                else if (move.promotion_type == PieceType::ROOK) board.board_w_R |= to_bitmask;
+                else if (move.promotion_type == PieceType::BISHOP) board.board_w_B |= to_bitmask;
+                else if (move.promotion_type == PieceType::KNIGHT) board.board_w_N |= to_bitmask;
             } else {
-                if (move.promotion_type == PieceType::QUEEN) board.board_b_Q |= to_bit;
-                else if (move.promotion_type == PieceType::ROOK) board.board_b_R |= to_bit;
-                else if (move.promotion_type == PieceType::BISHOP) board.board_b_B |= to_bit;
-                else if (move.promotion_type == PieceType::KNIGHT) board.board_b_N |= to_bit;
+                if (move.promotion_type == PieceType::QUEEN) board.board_b_Q |= to_bitmask;
+                else if (move.promotion_type == PieceType::ROOK) board.board_b_R |= to_bitmask;
+                else if (move.promotion_type == PieceType::BISHOP) board.board_b_B |= to_bitmask;
+                else if (move.promotion_type == PieceType::KNIGHT) board.board_b_N |= to_bitmask;
             }
         }
 
         board.history.push_back(move);
         return captured_piece;
+    }
+
+    // TODO: Test this
+    void undo_move(bitboard_t& board, const move_t& move, const piece_t& captured_piece) {
+        piece_t piece = board.at(move.to_x, move.to_y).piece;
+
+        // Convert from/to coordinates to bit indices
+        int from_index = move.from_y * 8 + move.from_x;
+        int to_index = move.to_y * 8 + move.to_x;
+
+        // Create bitboards for the source and destination squares
+        U64 from_bitmask = board.square_to_bit(from_index);
+        U64 to_bitmask = board.square_to_bit(to_index);
+
+        // Remove the move from move history (NOT the same as state history!)
+        board.history.pop_back();
+
+        if (board.state_history.empty()) {
+            throw std::invalid_argument("Trying to pop board state history, when history is empty.");
+        }
+
+            // Restore previous state
+        board_state previous_state = board.state_history.back();
+        board.state_history.pop_back();
+
+        board.white_king_side_castle  = previous_state.white_king_side_castle;
+        board.white_queen_side_castle = previous_state.white_queen_side_castle;
+        board.black_king_side_castle  = previous_state.black_king_side_castle;
+        board.black_queen_side_castle = previous_state.black_queen_side_castle;
+        board.en_passant_x            = previous_state.en_passant_x;
+        board.en_passant_y            = previous_state.en_passant_y;
+
+        bool is_en_passant = (board.at(move.to_x, move.to_y).piece.type == PieceType::PAWN &&
+                                move.from_x != move.to_x &&
+                                move.to_x == board.en_passant_x &&
+                                move.to_y == board.en_passant_y);
+        
+        bool is_castling = (board.at(move.to_x, move.to_y).piece.type == PieceType::KING &&
+                        abs(move.from_x - move.to_x) == 2);
+        
+        // Determine the relevant bitboard for the piece being moved
+        U64* piece_board = nullptr;
+        piece_board = board.get_board_for_piece(piece.type, piece.color);
+
+        if (!piece_board) {
+            throw std::runtime_error("Failed to determine the bitboard for the moving piece.");
+        }
+
+        // Move the piece from destination to source
+        *piece_board &= ~to_bitmask; // Clears the destination bit
+        *piece_board |= from_bitmask; // Sets the source bit
+
+
+        // TODO: Restore castling rook position
+
+
+        // Restore captured piece
+        if (is_en_passant) {
+            U64* opponent_pawns = board.get_board_for_piece(PieceType::PAWN, !piece.color);
+            *opponent_pawns |= board.square_to_bit(8*move.to_x+move.from_y);
+        } else {
+            U64* opponent_bitboard = board.get_board_for_piece(captured_piece.type, !piece.color);
+            *opponent_bitboard |= board.square_to_bit(8*move.to_x+move.to_y);
+        }
+    }
+
+    bool is_move_legal(bitboard_t& board, const move_t& move) {
+        return false;
     }
 }
 

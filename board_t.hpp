@@ -44,6 +44,16 @@ struct bitboard_t {
     vector<move_t> history;
     vector<board_state> state_history; // TODO: Implement this
 
+    // Current state
+    bool white_king_side_castle;
+    bool white_queen_side_castle;
+    bool black_king_side_castle;
+    bool black_queen_side_castle;
+
+    // TODO: Implement en passant
+    int en_passant_x;
+    int en_passant_y;
+
     inline U64 square_to_bit(int square) {
         return 1ULL << square;
     }
@@ -55,14 +65,16 @@ struct bitboard_t {
             // cout << y + 1 << " ";
             cout << x << " ";
             for (int y = 0; y < 8; y++) {
-                cout << at(x*8 + y) << " ";
+                cout << at(x, y) << " ";
             }
             cout << endl;
         }
         cout << "\n" << endl;
     }
 
-    square_t at(int bit) { // Pass an index (0-63) and convert to bitboard
+    square_t at(int x, int y) { // Pass an index (0-63) and convert to bitboard
+        int bit = x*8 + y;
+        
         if (bit < 0 || bit >= 64) {
             throw std::out_of_range("Bit index must be in range [0, 63].");
         }
@@ -87,6 +99,24 @@ struct bitboard_t {
 
         // No piece is found, return empty square
         return {bit % 8, bit / 8, false, {PieceType::EMPTY, Color::NONE}};
+    }
+
+    U64* get_board_for_piece(PieceType type, Color color) {
+        if (color == Color::WHITE) {
+            if (type == PieceType::PAWN)        return &board_w_P;
+            else if (type == PieceType::KNIGHT) return &board_w_N;
+            else if (type == PieceType::BISHOP) return &board_w_B;
+            else if (type == PieceType::ROOK)   return &board_w_R;
+            else if (type == PieceType::QUEEN)  return &board_w_Q;
+            else if (type == PieceType::KING)   return &board_w_K;
+        } else {
+            if (type == PieceType::PAWN)        return &board_b_P;
+            else if (type == PieceType::KNIGHT) return &board_b_N;
+            else if (type == PieceType::BISHOP) return &board_b_B;
+            else if (type == PieceType::ROOK)   return &board_b_R;
+            else if (type == PieceType::QUEEN)  return &board_b_Q;
+            else if (type == PieceType::KING)   return &board_b_K;
+        }
     }
 
     void initialize_starting_board() {
