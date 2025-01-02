@@ -54,17 +54,17 @@ struct bitboard_t {
     int en_passant_x;
     int en_passant_y;
 
-    inline U64 square_to_bit(int square) {
-        return 1ULL << square;
+    inline U64 single_bitmask(int square_idx) {
+        return 1ULL << square_idx;
     }
 
     void pretty_print_board() {
         cout << endl;
         cout << "  a b c d e f g h" << endl;
-        for (int x = 7; x >= 0; x--) {
+        for (int y = 7; y >= 0; y--) {
             // cout << y + 1 << " ";
-            cout << x << " ";
-            for (int y = 0; y < 8; y++) {
+            cout << y << " ";
+            for (int x = 0; x < 8; x++) {
                 cout << at(x, y) << " ";
             }
             cout << endl;
@@ -73,13 +73,13 @@ struct bitboard_t {
     }
 
     square_t at(int x, int y) { // Pass an index (0-63) and convert to bitboard
-        int bit = x*8 + y;
+        int bit = y*8 + x;
         
         if (bit < 0 || bit >= 64) {
             throw std::out_of_range("Bit index must be in range [0, 63].");
         }
 
-        U64 pos = square_to_bit(bit); // Convert index to bitboard
+        U64 pos = single_bitmask(bit); // Convert index to bitboard
 
         // White
         if (board_w_P & pos) return {bit % 8, bit / 8, false, {PieceType::PAWN, Color::WHITE}};
@@ -117,6 +117,18 @@ struct bitboard_t {
             else if (type == PieceType::QUEEN)  return &board_b_Q;
             else if (type == PieceType::KING)   return &board_b_K;
         }
+    }
+
+    U64* move_bit(U64* board, int from_idx, int to_idx) {
+
+        // Create bitboards for the source and destination squares
+        U64 from_bitmask = single_bitmask(from_idx);
+        U64 to_bitmask = single_bitmask(to_idx);
+
+        *board &= ~from_bitmask; // Clears the source bit
+        *board |= to_bitmask; // Sets the destination bit
+
+        return board;
     }
 
     void initialize_starting_board() {

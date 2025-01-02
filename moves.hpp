@@ -11,16 +11,12 @@
 
 namespace bit_moves {
     piece_t make_move(bitboard_t& board, const move_t& move) { // In the future, a move_t could simply be two bits, or a bitboard with the from/to bits set to 1
-        // Convert from/to coordinates to bit indices
-        int from_index = move.from_y * 8 + move.from_x;
-        int to_index = move.to_y * 8 + move.to_x;
-
-        // Create bitboards for the source and destination squares
-        U64 from_bitmask = board.square_to_bit(from_index);
-        U64 to_bitmask = board.square_to_bit(to_index);
-
         // Determine which piece is being moved
         piece_t moving_piece = board.at(move.from_x, move.from_y).piece;
+
+        printf("Moving (%i,%i) to (%i,%i)\n", move.from_x, move.from_y, move.to_x, move.to_y);
+        
+        U64 to_bitmask = board.single_bitmask(move.to_y * 8 + move.to_x);
 
         if (moving_piece.type == PieceType::EMPTY || moving_piece.color == Color::NONE) {
             throw std::invalid_argument("No piece to move at the source square.");
@@ -56,8 +52,7 @@ namespace bit_moves {
         // TODO: Set en passant target square if pawn double move
 
         // Make the actual move
-        *piece_board &= ~from_bitmask; // Clears the source bit
-        *piece_board |= to_bitmask; // Sets the destination bit
+        board.move_bit(piece_board, move.from_y * 8 + move.from_x, move.to_y * 8 + move.to_x);
 
         // Handle captures by clearing the destination square in all opponent bitboards
         piece_t captured_piece = {PieceType::EMPTY, Color::NONE}; // Track the captured piece
@@ -115,14 +110,6 @@ namespace bit_moves {
     void undo_move(bitboard_t& board, const move_t& move, const piece_t& captured_piece) {
         piece_t piece = board.at(move.to_x, move.to_y).piece;
 
-        // Convert from/to coordinates to bit indices
-        int from_index = move.from_y * 8 + move.from_x;
-        int to_index = move.to_y * 8 + move.to_x;
-
-        // Create bitboards for the source and destination squares
-        U64 from_bitmask = board.square_to_bit(from_index);
-        U64 to_bitmask = board.square_to_bit(to_index);
-
         // Remove the move from move history (NOT the same as state history!)
         board.history.pop_back();
 
@@ -158,8 +145,7 @@ namespace bit_moves {
         }
 
         // Move the piece from destination to source
-        *piece_board &= ~to_bitmask; // Clears the destination bit
-        *piece_board |= from_bitmask; // Sets the source bit
+        board.move_bit(piece_board, move.to_y * 8 + move.to_x, move.from_y * 8 + move.from_x);
 
 
         // TODO: Restore castling rook position
@@ -168,10 +154,10 @@ namespace bit_moves {
         // Restore captured piece
         if (is_en_passant) {
             U64* opponent_pawns = board.get_board_for_piece(PieceType::PAWN, !piece.color);
-            *opponent_pawns |= board.square_to_bit(8*move.to_x+move.from_y);
+            *opponent_pawns |= board.single_bitmask(8*move.to_x+move.from_y);
         } else {
             U64* opponent_bitboard = board.get_board_for_piece(captured_piece.type, !piece.color);
-            *opponent_bitboard |= board.square_to_bit(8*move.to_x+move.to_y);
+            *opponent_bitboard |= board.single_bitmask(8*move.to_x+move.to_y);
         }
     }
 
