@@ -208,7 +208,6 @@ namespace bit_moves {
     U64 get_rook_moves(bitboard_t& board, int x, int y) {
         int pos = y * 8 + x;
 
-        // Occupied squares (friendly and opponent)
         U64 occupied = board.get_all_pieces();
 
         // Friendly pieces to exclude
@@ -225,12 +224,13 @@ namespace bit_moves {
             while (true) {
                 square += dir;
 
-                // Stop if the move is out of bounds
+                // Move is out of bounds
                 if (square < 0 || square >= 64) break;
 
                 // Handle edge cases for east/west wrapping
                 if ((dir == 1 && square % 8 == 0) || (dir == -1 && pos % 8 == 0)) break;
 
+                // Add square to moves
                 U64 square_bit = 1ULL << square;
                 rook_moves |= square_bit;
 
@@ -240,7 +240,7 @@ namespace bit_moves {
                     if (friendly_pieces & square_bit) {
                         rook_moves &= ~square_bit; // Remove square if blocked by friendly piece
                     }
-                    break; // Stop further sliding in this direction
+                    break; // Stop sliding in this direction
                 }
             }
         }
@@ -249,7 +249,51 @@ namespace bit_moves {
     }
 
     U64 get_bishop_moves(bitboard_t& board, int x, int y) {
-        return 0ULL;
+        int pos = y * 8 + x;
+
+        U64 occupied = board.get_all_pieces();
+
+        // Friendly pieces to exclude
+        Color bishop_color = (board.board_w_B & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+        U64 friendly_pieces = board.get_all_friendly_pieces(bishop_color);
+
+        // Compute bishop moves
+        U64 bishop_moves = 0;
+
+        // Directions: North-East, South-West, North-West, South-East
+        const int directions[4] = {9, -9, 7, -7}; // Diagonal shifts
+
+        for (int dir : directions) {
+            int square = pos;
+            while (true) {
+                square += dir;
+
+                // Move out of bounds
+                if (square < 0 || square >= 64) break;
+
+                // Handle edge cases for diagonal wrapping
+                if ((dir == 9 && square % 8 == 0)   ||  // North-East wraps around
+                    (dir == -9 && pos % 8 == 0)     ||  // South-West wraps around
+                    (dir == 7 && square % 8 == 7)   ||  // North-West wraps around
+                    (dir == -7 && pos % 8 == 7))        // South-East wraps around
+                    break;
+
+                // Add square to moves
+                U64 square_bit = 1ULL << square;
+                bishop_moves |= square_bit;
+
+                // Stop at blockers
+                if (occupied & square_bit) {
+                    // Allow capture if the blocker is an opponent piece
+                    if (friendly_pieces & square_bit) {
+                        bishop_moves &= ~square_bit; // Remove square if blocked by friendly piece
+                    }
+                    break; // Stop sliding in this direction
+                }
+            }
+        }
+
+        return bishop_moves;
     }
 
     U64 get_queen_moves(bitboard_t& board, int x, int y) {
