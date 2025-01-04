@@ -40,10 +40,11 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     for (const move_t& move : moves) {
         moves::make_move(board, move);
         bit_moves::make_move(bitboard, move);
+        // board.pretty_print_board();
     }
 
-    board.pretty_print_board();
     bitboard.pretty_print_board();
+    bitboard.print_bitboard(bit_moves::get_pawn_moves(bitboard,6,3));
 
     Color color_to_move = (moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
 

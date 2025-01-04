@@ -402,6 +402,9 @@ namespace bit_moves {
     // TODO
     U64 get_king_moves(bitboard_t& board, int x, int y) {
         return 0ULL;
+
+        // check for check
+        // check for en passant
     }
 }
 
