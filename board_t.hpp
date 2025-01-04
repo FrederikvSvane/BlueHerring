@@ -166,9 +166,10 @@ struct bitboard_t {
         return friendly_pieces;
     }
 
+    // A board with all occupied squares
     U64 get_all_pieces() {
         return (board_w_P | board_w_N | board_w_B | board_w_R | board_w_Q | board_w_K | 
-                    board_b_P | board_b_N | board_b_B | board_b_R | board_b_Q | board_b_K);
+                board_b_P | board_b_N | board_b_B | board_b_R | board_b_Q | board_b_K);
     }
 
     void initialize_starting_board() {

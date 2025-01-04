@@ -206,7 +206,46 @@ namespace bit_moves {
     }
 
     U64 get_rook_moves(bitboard_t& board, int x, int y) {
-        return 0ULL;
+        int pos = y * 8 + x;
+
+        // Occupied squares (friendly and opponent)
+        U64 occupied = board.get_all_pieces();
+
+        // Friendly pieces to exclude
+        Color rook_color = (board.board_w_R & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+        U64 friendly_pieces = board.get_all_friendly_pieces(rook_color);
+
+        U64 rook_moves = 0;
+
+        // Directions: North, South, East, West
+        const int directions[4] = {8, -8, 1, -1}; // File and rank shifts
+
+        for (int dir : directions) {
+            int square = pos;
+            while (true) {
+                square += dir;
+
+                // Stop if the move is out of bounds
+                if (square < 0 || square >= 64) break;
+
+                // Handle edge cases for east/west wrapping
+                if ((dir == 1 && square % 8 == 0) || (dir == -1 && pos % 8 == 0)) break;
+
+                U64 square_bit = 1ULL << square;
+                rook_moves |= square_bit;
+
+                // Stop at blockers
+                if (occupied & square_bit) {
+                    // Allow capture if the blocker is an opponent piece
+                    if (friendly_pieces & square_bit) {
+                        rook_moves &= ~square_bit; // Remove square if blocked by friendly piece
+                    }
+                    break; // Stop further sliding in this direction
+                }
+            }
+        }
+
+        return rook_moves;
     }
 
     U64 get_bishop_moves(bitboard_t& board, int x, int y) {
