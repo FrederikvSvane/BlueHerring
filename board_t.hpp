@@ -41,6 +41,14 @@ struct bitboard_t {
     U64 board_b_B;
     U64 board_b_R;
 
+
+    // The idea here is to have a move table that contains a bitmask for the given square. This bitmask contains the 
+    // legal moves of the piece in that square. So when a player moves, we only need to update a few tables, rather 
+    // than recomputing all the legal moves.
+    U64 move_table_white[64] = {};
+    U64 move_table_black[64] = {};
+
+
     vector<move_t> history;
     vector<board_state> state_history; // TODO: Implement this
 
@@ -70,6 +78,20 @@ struct bitboard_t {
             cout << endl;
         }
         cout << "\n" << endl;
+    }
+
+    // Just for debugging
+    void print_bitboard(U64 board) {
+        for (int rank = 7; rank >= 0; --rank) { // Chess ranks (8 to 1, top to bottom)
+            std::cout << "  ";
+            
+            for (int file = 0; file < 8; ++file) { // Chess files (a to h, left to right)
+                int square = rank * 8 + file;
+                U64 mask = 1ULL << square;   // Create a mask for the square
+                std::cout << ((board & mask) ? '1' : '0') << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 
     square_t at(int x, int y) { // Pass an index (0-63) and convert to bitboard
@@ -129,6 +151,24 @@ struct bitboard_t {
         *board |= to_bitmask; // Sets the destination bit
 
         return board;
+    }
+
+    // A board with ones wherever the given player has a piece
+    U64 get_all_friendly_pieces(Color color) {
+        U64 friendly_pieces = (board_w_P | board_w_N | board_w_B |
+                                board_w_R | board_w_Q | board_w_K);
+        
+        if (color == Color::BLACK) {
+            friendly_pieces = (board_b_P | board_b_N | board_b_B |
+                                board_b_R | board_b_Q | board_b_K);
+        }
+
+        return friendly_pieces;
+    }
+
+    U64 get_all_pieces() {
+        return (board_w_P | board_w_N | board_w_B | board_w_R | board_w_Q | board_w_K | 
+                    board_b_P | board_b_N | board_b_B | board_b_R | board_b_Q | board_b_K);
     }
 
     void initialize_starting_board() {

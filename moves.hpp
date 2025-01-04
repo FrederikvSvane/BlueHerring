@@ -13,8 +13,6 @@ namespace bit_moves {
     piece_t make_move(bitboard_t& board, const move_t& move) { // In the future, a move_t could simply be two bits, or a bitboard with the from/to bits set to 1
         // Determine which piece is being moved
         piece_t moving_piece = board.at(move.from_x, move.from_y).piece;
-
-        printf("Moving (%i,%i) to (%i,%i)\n", move.from_x, move.from_y, move.to_x, move.to_y);
         
         U64 to_bitmask = board.single_bitmask(move.to_y * 8 + move.to_x);
 
@@ -148,8 +146,14 @@ namespace bit_moves {
         board.move_bit(piece_board, move.to_y * 8 + move.to_x, move.from_y * 8 + move.from_x);
 
 
-        // TODO: Restore castling rook position
-
+        // TODO: Test this
+        if (is_castling) {
+            if (move.to_x == 6) { // kingside
+                board.move_bit(board.get_board_for_piece(PieceType::ROOK, piece.color), move.from_y*8+5, move.from_y*8+7);
+            } else if (move.to_x == 2) { // queenside
+                board.move_bit(board.get_board_for_piece(PieceType::ROOK, piece.color), move.from_y*8+3, move.from_y*8);
+            }
+        }
 
         // Restore captured piece
         if (is_en_passant) {
@@ -161,9 +165,66 @@ namespace bit_moves {
         }
     }
 
+    // TODO
     bool is_move_legal(bitboard_t& board, const move_t& move) {
         return false;
     }
+
+    // Returns a bitmask with ones on the standard knight squares for the given position
+    U64 get_knight_moves(bitboard_t& board, int x, int y) {
+        int pos = y*8 + x;
+
+        // Precomputed knight moves table (indexed by square position)
+        static const U64 knight_attack_table[64] = {
+            0x0000000000020400ULL, 0x0000000000050800ULL, 0x00000000000A1100ULL, 0x0000000000142200ULL,
+            0x0000000000284400ULL, 0x0000000000508800ULL, 0x0000000000A01000ULL, 0x0000000000402000ULL,
+            0x0000000002040004ULL, 0x0000000005080008ULL, 0x000000000A110011ULL, 0x0000000014220022ULL,
+            0x0000000028440044ULL, 0x0000000050880088ULL, 0x00000000A0100010ULL, 0x0000000040200020ULL,
+            0x0000000204000402ULL, 0x0000000508000805ULL, 0x0000000A1100110AULL, 0x0000001422002214ULL,
+            0x0000002844004428ULL, 0x0000005088008850ULL, 0x000000A0100010A0ULL, 0x0000004020002040ULL,
+            0x0000020400040200ULL, 0x0000050800080500ULL, 0x00000A1100110A00ULL, 0x0000142200221400ULL,
+            0x0000284400442800ULL, 0x0000508800885000ULL, 0x0000A0100010A000ULL, 0x0000402000204000ULL,
+            0x0002040004020000ULL, 0x0005080008050000ULL, 0x000A1100110A0000ULL, 0x0014220022140000ULL,
+            0x0028440044280000ULL, 0x0050880088500000ULL, 0x00A0100010A00000ULL, 0x0040200020400000ULL,
+            0x0204000402000000ULL, 0x0508000805000000ULL, 0x0A1100110A000000ULL, 0x1422002214000000ULL,
+            0x2844004428000000ULL, 0x5088008850000000ULL, 0xA0100010A0000000ULL, 0x4020002040000000ULL,
+            0x0400040200000000ULL, 0x0800080500000000ULL, 0x1100110A00000000ULL, 0x2200221400000000ULL,
+            0x4400442800000000ULL, 0x8800885000000000ULL, 0x100010A000000000ULL, 0x2000204000000000ULL,
+            0x0004020000000000ULL, 0x0008050000000000ULL, 0x00110A0000000000ULL, 0x0022140000000000ULL,
+            0x0044280000000000ULL, 0x0088500000000000ULL, 0x0010A00000000000ULL, 0x0020400000000000ULL
+        };
+
+        // Get the move table for the given square
+        U64 knight_moves = knight_attack_table[pos];
+
+        Color knight_color = (board.board_w_N & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+
+        // Remove all moves targeting friendly pieces
+        knight_moves &= ~board.get_all_friendly_pieces(knight_color);
+
+        return knight_moves;
+    }
+
+    U64 get_rook_moves(bitboard_t& board, int x, int y) {
+        return 0ULL;
+    }
+
+    U64 get_bishop_moves(bitboard_t& board, int x, int y) {
+        return 0ULL;
+    }
+
+    U64 get_queen_moves(bitboard_t& board, int x, int y) {
+        return 0ULL;
+    }
+
+    U64 get_king_moves(bitboard_t& board, int x, int y) {
+        return 0ULL;
+    }
+
+    U64 get_pawn_moves(bitboard_t& board, int x, int y) {
+        return 0ULL;
+    }
+
 }
 
 namespace moves {
