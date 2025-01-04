@@ -170,6 +170,78 @@ namespace bit_moves {
         return false;
     }
 
+    // Used for rook/queen
+    U64 get_orthogonal_moves(U64 occupied, U64 friendly_pieces, int pos) {
+        U64 orthogonal_moves = 0;
+        const int directions[4] = {8, -8, 1, -1}; // North, South, East, West
+
+        for (int dir : directions) {
+            int square = pos;
+            while (true) {
+                square += dir;
+
+                // Out of bounds
+                if (square < 0 || square >= 64) break;
+
+                // Handle edge cases for east/west wrapping
+                if ((dir == 1 && square % 8 == 0) || (dir == -1 && square % 8 == 7)) break;
+
+                U64 square_bit = 1ULL << square;
+                orthogonal_moves |= square_bit;
+
+                // Stop at blockers
+                if (occupied & square_bit) {
+                    if (friendly_pieces & square_bit) {
+                        orthogonal_moves &= ~square_bit; // Remove square if blocked by friendly piece
+                    }
+                    break; // Stop sliding in this direction
+                }
+            }
+        }
+
+        return orthogonal_moves;
+    }
+
+    // Used for bishop/queen
+    U64 get_diagonal_moves(U64 occupied, U64 friendly_pieces, int pos) {
+        U64 diagonal_moves = 0;
+        const int directions[4] = {9, -9, 7, -7}; // North-East, South-West, North-West, South-East
+
+        for (int dir : directions) {
+            int square = pos;
+            while (true) {
+                square += dir;
+
+                // Out of bounds
+                if (square < 0 || square >= 64) break;
+
+                if (dir == -9) {
+                    printf("square %i\n",square);
+                }
+
+                // Handle edge cases for diagonal wrapping
+                if ((dir == 9 && square % 8 == 0)   ||     // North-East wraps around
+                    (dir == -9 && square % 8 == 7)  ||    // South-West wraps around
+                    (dir == 7 && square % 8 == 7)   ||   // North-West wraps around
+                    (dir == -7 && square % 8 == 0))     // South-East wraps around
+                    break;
+
+                U64 square_bit = 1ULL << square;
+                diagonal_moves |= square_bit;
+
+                // Stop at blockers
+                if (occupied & square_bit) {
+                    if (friendly_pieces & square_bit) {
+                        diagonal_moves &= ~square_bit; // Remove square if blocked by friendly piece
+                    }
+                    break; // Stop sliding in this direction
+                }
+            }
+        }
+
+        return diagonal_moves;
+    }
+
     // Returns a bitmask with ones on the standard knight squares for the given position
     U64 get_knight_moves(bitboard_t& board, int x, int y) {
         int pos = y*8 + x;
@@ -214,38 +286,7 @@ namespace bit_moves {
         Color rook_color = (board.board_w_R & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
         U64 friendly_pieces = board.get_all_friendly_pieces(rook_color);
 
-        U64 rook_moves = 0;
-
-        // Directions: North, South, East, West
-        const int directions[4] = {8, -8, 1, -1}; // File and rank shifts
-
-        for (int dir : directions) {
-            int square = pos;
-            while (true) {
-                square += dir;
-
-                // Move is out of bounds
-                if (square < 0 || square >= 64) break;
-
-                // Handle edge cases for east/west wrapping
-                if ((dir == 1 && square % 8 == 0) || (dir == -1 && pos % 8 == 0)) break;
-
-                // Add square to moves
-                U64 square_bit = 1ULL << square;
-                rook_moves |= square_bit;
-
-                // Stop at blockers
-                if (occupied & square_bit) {
-                    // Allow capture if the blocker is an opponent piece
-                    if (friendly_pieces & square_bit) {
-                        rook_moves &= ~square_bit; // Remove square if blocked by friendly piece
-                    }
-                    break; // Stop sliding in this direction
-                }
-            }
-        }
-
-        return rook_moves;
+        return get_orthogonal_moves(occupied, friendly_pieces, pos);
     }
 
     U64 get_bishop_moves(bitboard_t& board, int x, int y) {
@@ -257,48 +298,25 @@ namespace bit_moves {
         Color bishop_color = (board.board_w_B & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
         U64 friendly_pieces = board.get_all_friendly_pieces(bishop_color);
 
-        // Compute bishop moves
-        U64 bishop_moves = 0;
-
-        // Directions: North-East, South-West, North-West, South-East
-        const int directions[4] = {9, -9, 7, -7}; // Diagonal shifts
-
-        for (int dir : directions) {
-            int square = pos;
-            while (true) {
-                square += dir;
-
-                // Move out of bounds
-                if (square < 0 || square >= 64) break;
-
-                // Handle edge cases for diagonal wrapping
-                if ((dir == 9 && square % 8 == 0)   ||  // North-East wraps around
-                    (dir == -9 && pos % 8 == 0)     ||  // South-West wraps around
-                    (dir == 7 && square % 8 == 7)   ||  // North-West wraps around
-                    (dir == -7 && pos % 8 == 7))        // South-East wraps around
-                    break;
-
-                // Add square to moves
-                U64 square_bit = 1ULL << square;
-                bishop_moves |= square_bit;
-
-                // Stop at blockers
-                if (occupied & square_bit) {
-                    // Allow capture if the blocker is an opponent piece
-                    if (friendly_pieces & square_bit) {
-                        bishop_moves &= ~square_bit; // Remove square if blocked by friendly piece
-                    }
-                    break; // Stop sliding in this direction
-                }
-            }
-        }
-
-        return bishop_moves;
+        return get_diagonal_moves(occupied, friendly_pieces, pos);
     }
 
     U64 get_queen_moves(bitboard_t& board, int x, int y) {
-        return 0ULL;
+        int pos = y * 8 + x;
+
+        U64 occupied = board.get_all_pieces();
+
+        // Friendly pieces to exclude
+        Color queen_color = (board.board_w_Q & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+        U64 friendly_pieces = board.get_all_friendly_pieces(queen_color);
+
+        U64 diagonal_moves = get_diagonal_moves(occupied, friendly_pieces, pos);
+        U64 orthogonal_moves = get_orthogonal_moves(occupied, friendly_pieces, pos);
+
+        // Get both diagonal and orthogonal moves
+        return diagonal_moves | orthogonal_moves;
     }
+
 
     U64 get_king_moves(bitboard_t& board, int x, int y) {
         return 0ULL;
