@@ -168,6 +168,8 @@ namespace bit_moves {
     // TODO
     bool is_move_legal(bitboard_t& board, const move_t& move) {
         return false;
+
+        // Check for discovered check
     }
 
     // Used for rook/queen
@@ -317,15 +319,90 @@ namespace bit_moves {
         return diagonal_moves | orthogonal_moves;
     }
 
+    U64 get_pawn_moves(bitboard_t& board, int x, int y) {
+        int pos = y * 8 + x; // Square index (0-63)
+        Color pawn_color = (board.board_w_P & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
 
+        // Occupied squares
+        U64 occupied = board.get_all_pieces();
+        U64 opponent_pieces = pawn_color == Color::WHITE ? board.get_all_friendly_pieces(Color::BLACK) : board.get_all_friendly_pieces(Color::WHITE);
+
+        U64 pawn_moves = 0;
+
+        if (pawn_color == Color::WHITE) {
+            // Single forward move
+            U64 single_move = (1ULL << pos) << 8;
+            if (!(single_move & occupied)) {
+                pawn_moves |= single_move;
+
+                // Double forward move (if on rank 2)
+                if (y == 1) {
+                    U64 double_move = single_move << 8;
+                    if (!(double_move & occupied)) {
+                        pawn_moves |= double_move;
+                    }
+                }
+            }
+
+            // Captures
+            U64 capture_left = (1ULL << pos) << 7;
+            U64 capture_right = (1ULL << pos) << 9;
+
+            if (x > 0) { // Ensure left diagonal capture stays on the board
+                if (capture_left & opponent_pieces) {
+                    pawn_moves |= capture_left;
+                }
+            }
+
+            if (x < 7) { // Ensure right diagonal capture stays on the board
+                if (capture_right & opponent_pieces) {
+                    pawn_moves |= capture_right;
+                }
+            }
+
+            // TODO: en passant capture
+
+        } else { // Black pawns
+            // Single forward move
+            U64 single_move = (1ULL << pos) >> 8;
+            if (!(single_move & occupied)) {
+                pawn_moves |= single_move;
+
+                // Double forward move (if on rank 7)
+                if (y == 6) {
+                    U64 double_move = single_move >> 8;
+                    if (!(double_move & occupied)) {
+                        pawn_moves |= double_move;
+                    }
+                }
+            }
+
+            // Captures
+            U64 capture_left = (1ULL << pos) >> 9;
+            U64 capture_right = (1ULL << pos) >> 7;
+
+            if (x > 0) { // Ensure left diagonal capture stays on the board
+                if (capture_left & opponent_pieces) {
+                    pawn_moves |= capture_left;
+                }
+            }
+
+            if (x < 7) { // Ensure right diagonal capture stays on the board
+                if (capture_right & opponent_pieces) {
+                    pawn_moves |= capture_right;
+                }
+            }
+
+            // TODO: en passant capture
+        }
+
+        return pawn_moves;
+    }
+
+    // TODO
     U64 get_king_moves(bitboard_t& board, int x, int y) {
         return 0ULL;
     }
-
-    U64 get_pawn_moves(bitboard_t& board, int x, int y) {
-        return 0ULL;
-    }
-
 }
 
 namespace moves {
