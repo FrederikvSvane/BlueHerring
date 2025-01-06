@@ -19,7 +19,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
   vector<move_t> possible_moves = moves::generate_all_moves_for_color(board, color);
   
   if (color == Color::WHITE) {
-    int max_score = -(int)INFINITY;
+    int max_score = -2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
@@ -42,7 +42,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
     return max_score;
   } 
   else {
-    int min_score = (int)INFINITY;
+    int min_score = 2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
@@ -80,14 +80,14 @@ move_t get_best_move(board_t &board, int depth, Color color) {
   move_t best_move = possible_moves[0];
 
   if (color == Color::WHITE) { // Playing as white
-    int best_score = -(int)INFINITY;
+    int best_score = -2147483647;
 
     for (move_t move : possible_moves) {
 
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
-      int score = negamax(board, depth - 1, -(int)INFINITY, (int)INFINITY, !color);
+      int score = negamax(board, depth - 1, -2147483647, 2147483647, !color);
 
       if (score > best_score) {
         best_score = score;
@@ -99,13 +99,13 @@ move_t get_best_move(board_t &board, int depth, Color color) {
     }
   }
   else { // Playing as black
-    int best_score = (int)INFINITY;
+    int best_score = 2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
-      int score = negamax(board, depth - 1, -(int)INFINITY, (int)INFINITY, !color);
+      int score = negamax(board, depth - 1, -2147483647, 2147483647, !color);
 
       if (score < best_score) {
         best_score = score;
