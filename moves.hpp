@@ -9,6 +9,405 @@
 #include <stdint.h> //had to include this, otherwise didn't compile on my pc
 #include <vector>
 
+namespace bit_moves {
+    piece_t make_move(bitboard_t& board, const move_t& move) { // In the future, a move_t could simply be two bits, or a bitboard with the from/to bits set to 1
+        // Determine which piece is being moved
+        piece_t moving_piece = board.at(move.from_x, move.from_y).piece;
+        
+        U64 to_bitmask = board.single_bitmask(move.to_y * 8 + move.to_x);
+
+        if (moving_piece.type == PieceType::EMPTY || moving_piece.color == Color::NONE) {
+            throw std::invalid_argument("No piece to move at the source square.");
+        }
+
+        // Determine the relevant bitboard for the piece being moved
+        U64* piece_board = nullptr;
+        piece_board = board.get_board_for_piece(moving_piece.type, moving_piece.color);
+
+        if (!piece_board) {
+            throw std::runtime_error("Failed to determine the bitboard for the moving piece.");
+        }
+
+
+        // TODO: Save current state before making the move
+
+        // TODO: Update castling rights if king moves
+
+        // TODO: Update castling rights based on rook activity (check if we move or capture a rook)
+
+        // TODO: Check to_square
+
+        // Save captured piece
+
+        // TODO: Handle special cases
+
+        // TODO: Handle en passant capture
+
+        // TODO: Handle castling rook movement
+
+        // TODO: Reset en passant target square
+
+        // TODO: Set en passant target square if pawn double move
+
+        // Make the actual move
+        board.move_bit(piece_board, move.from_y * 8 + move.from_x, move.to_y * 8 + move.to_x);
+
+        // Handle captures by clearing the destination square in all opponent bitboards
+        piece_t captured_piece = {PieceType::EMPTY, Color::NONE}; // Track the captured piece
+        U64* opponent_boards[] = {
+            &board.board_b_P, &board.board_b_N, &board.board_b_B,
+            &board.board_b_R, &board.board_b_Q, &board.board_b_K
+        };
+
+        if (moving_piece.color == Color::BLACK) {
+            opponent_boards[0] = &board.board_w_P;
+            opponent_boards[1] = &board.board_w_N;
+            opponent_boards[2] = &board.board_w_B;
+            opponent_boards[3] = &board.board_w_R;
+            opponent_boards[4] = &board.board_w_Q;
+            opponent_boards[5] = &board.board_w_K;
+        }
+
+        for (int i = 0; i < 6; ++i) {
+            if (*opponent_boards[i] & to_bitmask) {
+                *opponent_boards[i] &= ~to_bitmask; // Clear the captured piece
+                captured_piece.type = static_cast<PieceType>(i + 1);
+                captured_piece.color = !moving_piece.color;
+                break;
+            }
+        }
+
+        // Handle promotion if applicable
+        if (moving_piece.type == PieceType::PAWN && (move.to_y == 0 || move.to_y == 7)) {
+            if (move.promotion_type == PieceType::EMPTY) {
+                throw std::invalid_argument("Promotion type not specified for pawn promotion.");
+            }
+
+            // Remove the pawn from its bitboard
+            *piece_board &= ~to_bitmask;
+
+            // Add the promoted piece to the appropriate bitboard
+            if (moving_piece.color == Color::WHITE) {
+                if (move.promotion_type == PieceType::QUEEN) board.board_w_Q |= to_bitmask;
+                else if (move.promotion_type == PieceType::ROOK) board.board_w_R |= to_bitmask;
+                else if (move.promotion_type == PieceType::BISHOP) board.board_w_B |= to_bitmask;
+                else if (move.promotion_type == PieceType::KNIGHT) board.board_w_N |= to_bitmask;
+            } else {
+                if (move.promotion_type == PieceType::QUEEN) board.board_b_Q |= to_bitmask;
+                else if (move.promotion_type == PieceType::ROOK) board.board_b_R |= to_bitmask;
+                else if (move.promotion_type == PieceType::BISHOP) board.board_b_B |= to_bitmask;
+                else if (move.promotion_type == PieceType::KNIGHT) board.board_b_N |= to_bitmask;
+            }
+        }
+
+        board.history.push_back(move);
+        return captured_piece;
+    }
+
+    // TODO: Test this
+    void undo_move(bitboard_t& board, const move_t& move, const piece_t& captured_piece) {
+        piece_t piece = board.at(move.to_x, move.to_y).piece;
+
+        // Remove the move from move history (NOT the same as state history!)
+        board.history.pop_back();
+
+        if (board.state_history.empty()) {
+            throw std::invalid_argument("Trying to pop board state history, when history is empty.");
+        }
+
+            // Restore previous state
+        board_state previous_state = board.state_history.back();
+        board.state_history.pop_back();
+
+        board.white_king_side_castle  = previous_state.white_king_side_castle;
+        board.white_queen_side_castle = previous_state.white_queen_side_castle;
+        board.black_king_side_castle  = previous_state.black_king_side_castle;
+        board.black_queen_side_castle = previous_state.black_queen_side_castle;
+        board.en_passant_x            = previous_state.en_passant_x;
+        board.en_passant_y            = previous_state.en_passant_y;
+
+        bool is_en_passant = (board.at(move.to_x, move.to_y).piece.type == PieceType::PAWN &&
+                                move.from_x != move.to_x &&
+                                move.to_x == board.en_passant_x &&
+                                move.to_y == board.en_passant_y);
+        
+        bool is_castling = (board.at(move.to_x, move.to_y).piece.type == PieceType::KING &&
+                        abs(move.from_x - move.to_x) == 2);
+        
+        // Determine the relevant bitboard for the piece being moved
+        U64* piece_board = nullptr;
+        piece_board = board.get_board_for_piece(piece.type, piece.color);
+
+        if (!piece_board) {
+            throw std::runtime_error("Failed to determine the bitboard for the moving piece.");
+        }
+
+        // Move the piece from destination to source
+        board.move_bit(piece_board, move.to_y * 8 + move.to_x, move.from_y * 8 + move.from_x);
+
+
+        // TODO: Test this
+        if (is_castling) {
+            if (move.to_x == 6) { // kingside
+                board.move_bit(board.get_board_for_piece(PieceType::ROOK, piece.color), move.from_y*8+5, move.from_y*8+7);
+            } else if (move.to_x == 2) { // queenside
+                board.move_bit(board.get_board_for_piece(PieceType::ROOK, piece.color), move.from_y*8+3, move.from_y*8);
+            }
+        }
+
+        // Restore captured piece
+        if (is_en_passant) {
+            U64* opponent_pawns = board.get_board_for_piece(PieceType::PAWN, !piece.color);
+            *opponent_pawns |= board.single_bitmask(8*move.to_x+move.from_y);
+        } else {
+            U64* opponent_bitboard = board.get_board_for_piece(captured_piece.type, !piece.color);
+            *opponent_bitboard |= board.single_bitmask(8*move.to_x+move.to_y);
+        }
+    }
+
+    // TODO
+    bool is_move_legal(bitboard_t& board, const move_t& move) {
+        return false;
+
+        // Check for discovered check
+    }
+
+    // Used for rook/queen
+    U64 get_orthogonal_moves(U64 occupied, U64 friendly_pieces, int pos) {
+        U64 orthogonal_moves = 0;
+        const int directions[4] = {8, -8, 1, -1}; // North, South, East, West
+
+        for (int dir : directions) {
+            int square = pos;
+            while (true) {
+                square += dir;
+
+                // Out of bounds
+                if (square < 0 || square >= 64) break;
+
+                // Handle edge cases for east/west wrapping
+                if ((dir == 1 && square % 8 == 0) || (dir == -1 && square % 8 == 7)) break;
+
+                U64 square_bit = 1ULL << square;
+                orthogonal_moves |= square_bit;
+
+                // Stop at blockers
+                if (occupied & square_bit) {
+                    if (friendly_pieces & square_bit) {
+                        orthogonal_moves &= ~square_bit; // Remove square if blocked by friendly piece
+                    }
+                    break; // Stop sliding in this direction
+                }
+            }
+        }
+
+        return orthogonal_moves;
+    }
+
+    // Used for bishop/queen
+    U64 get_diagonal_moves(U64 occupied, U64 friendly_pieces, int pos) {
+        U64 diagonal_moves = 0;
+        const int directions[4] = {9, -9, 7, -7}; // North-East, South-West, North-West, South-East
+
+        for (int dir : directions) {
+            int square = pos;
+            while (true) {
+                square += dir;
+
+                // Out of bounds
+                if (square < 0 || square >= 64) break;
+
+                if (dir == -9) {
+                    printf("square %i\n",square);
+                }
+
+                // Handle edge cases for diagonal wrapping
+                if ((dir == 9 && square % 8 == 0)   ||     // North-East wraps around
+                    (dir == -9 && square % 8 == 7)  ||    // South-West wraps around
+                    (dir == 7 && square % 8 == 7)   ||   // North-West wraps around
+                    (dir == -7 && square % 8 == 0))     // South-East wraps around
+                    break;
+
+                U64 square_bit = 1ULL << square;
+                diagonal_moves |= square_bit;
+
+                // Stop at blockers
+                if (occupied & square_bit) {
+                    if (friendly_pieces & square_bit) {
+                        diagonal_moves &= ~square_bit; // Remove square if blocked by friendly piece
+                    }
+                    break; // Stop sliding in this direction
+                }
+            }
+        }
+
+        return diagonal_moves;
+    }
+
+    // Returns a bitmask with ones on the standard knight squares for the given position
+    U64 get_knight_moves(bitboard_t& board, int x, int y) {
+        int pos = y*8 + x;
+
+        // Precomputed knight moves table (indexed by square position)
+        static const U64 knight_attack_table[64] = {
+            0x0000000000020400ULL, 0x0000000000050800ULL, 0x00000000000A1100ULL, 0x0000000000142200ULL,
+            0x0000000000284400ULL, 0x0000000000508800ULL, 0x0000000000A01000ULL, 0x0000000000402000ULL,
+            0x0000000002040004ULL, 0x0000000005080008ULL, 0x000000000A110011ULL, 0x0000000014220022ULL,
+            0x0000000028440044ULL, 0x0000000050880088ULL, 0x00000000A0100010ULL, 0x0000000040200020ULL,
+            0x0000000204000402ULL, 0x0000000508000805ULL, 0x0000000A1100110AULL, 0x0000001422002214ULL,
+            0x0000002844004428ULL, 0x0000005088008850ULL, 0x000000A0100010A0ULL, 0x0000004020002040ULL,
+            0x0000020400040200ULL, 0x0000050800080500ULL, 0x00000A1100110A00ULL, 0x0000142200221400ULL,
+            0x0000284400442800ULL, 0x0000508800885000ULL, 0x0000A0100010A000ULL, 0x0000402000204000ULL,
+            0x0002040004020000ULL, 0x0005080008050000ULL, 0x000A1100110A0000ULL, 0x0014220022140000ULL,
+            0x0028440044280000ULL, 0x0050880088500000ULL, 0x00A0100010A00000ULL, 0x0040200020400000ULL,
+            0x0204000402000000ULL, 0x0508000805000000ULL, 0x0A1100110A000000ULL, 0x1422002214000000ULL,
+            0x2844004428000000ULL, 0x5088008850000000ULL, 0xA0100010A0000000ULL, 0x4020002040000000ULL,
+            0x0400040200000000ULL, 0x0800080500000000ULL, 0x1100110A00000000ULL, 0x2200221400000000ULL,
+            0x4400442800000000ULL, 0x8800885000000000ULL, 0x100010A000000000ULL, 0x2000204000000000ULL,
+            0x0004020000000000ULL, 0x0008050000000000ULL, 0x00110A0000000000ULL, 0x0022140000000000ULL,
+            0x0044280000000000ULL, 0x0088500000000000ULL, 0x0010A00000000000ULL, 0x0020400000000000ULL
+        };
+
+        // Get the move table for the given square
+        U64 knight_moves = knight_attack_table[pos];
+
+        Color knight_color = (board.board_w_N & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+
+        // Remove all moves targeting friendly pieces
+        knight_moves &= ~board.get_all_friendly_pieces(knight_color);
+
+        return knight_moves;
+    }
+
+    U64 get_rook_moves(bitboard_t& board, int x, int y) {
+        int pos = y * 8 + x;
+
+        U64 occupied = board.get_all_pieces();
+
+        // Friendly pieces to exclude
+        Color rook_color = (board.board_w_R & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+        U64 friendly_pieces = board.get_all_friendly_pieces(rook_color);
+
+        return get_orthogonal_moves(occupied, friendly_pieces, pos);
+    }
+
+    U64 get_bishop_moves(bitboard_t& board, int x, int y) {
+        int pos = y * 8 + x;
+
+        U64 occupied = board.get_all_pieces();
+
+        // Friendly pieces to exclude
+        Color bishop_color = (board.board_w_B & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+        U64 friendly_pieces = board.get_all_friendly_pieces(bishop_color);
+
+        return get_diagonal_moves(occupied, friendly_pieces, pos);
+    }
+
+    U64 get_queen_moves(bitboard_t& board, int x, int y) {
+        int pos = y * 8 + x;
+
+        U64 occupied = board.get_all_pieces();
+
+        // Friendly pieces to exclude
+        Color queen_color = (board.board_w_Q & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+        U64 friendly_pieces = board.get_all_friendly_pieces(queen_color);
+
+        U64 diagonal_moves = get_diagonal_moves(occupied, friendly_pieces, pos);
+        U64 orthogonal_moves = get_orthogonal_moves(occupied, friendly_pieces, pos);
+
+        // Get both diagonal and orthogonal moves
+        return diagonal_moves | orthogonal_moves;
+    }
+
+    U64 get_pawn_moves(bitboard_t& board, int x, int y) {
+        int pos = y * 8 + x; // Square index (0-63)
+        Color pawn_color = (board.board_w_P & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+
+        // Occupied squares
+        U64 occupied = board.get_all_pieces();
+        U64 opponent_pieces = pawn_color == Color::WHITE ? board.get_all_friendly_pieces(Color::BLACK) : board.get_all_friendly_pieces(Color::WHITE);
+
+        U64 pawn_moves = 0;
+
+        if (pawn_color == Color::WHITE) {
+            // Single forward move
+            U64 single_move = (1ULL << pos) << 8;
+            if (!(single_move & occupied)) {
+                pawn_moves |= single_move;
+
+                // Double forward move (if on rank 2)
+                if (y == 1) {
+                    U64 double_move = single_move << 8;
+                    if (!(double_move & occupied)) {
+                        pawn_moves |= double_move;
+                    }
+                }
+            }
+
+            // Captures
+            U64 capture_left = (1ULL << pos) << 7;
+            U64 capture_right = (1ULL << pos) << 9;
+
+            if (x > 0) { // Ensure left diagonal capture stays on the board
+                if (capture_left & opponent_pieces) {
+                    pawn_moves |= capture_left;
+                }
+            }
+
+            if (x < 7) { // Ensure right diagonal capture stays on the board
+                if (capture_right & opponent_pieces) {
+                    pawn_moves |= capture_right;
+                }
+            }
+
+            // TODO: en passant capture
+
+        } else { // Black pawns
+            // Single forward move
+            U64 single_move = (1ULL << pos) >> 8;
+            if (!(single_move & occupied)) {
+                pawn_moves |= single_move;
+
+                // Double forward move (if on rank 7)
+                if (y == 6) {
+                    U64 double_move = single_move >> 8;
+                    if (!(double_move & occupied)) {
+                        pawn_moves |= double_move;
+                    }
+                }
+            }
+
+            // Captures
+            U64 capture_left = (1ULL << pos) >> 9;
+            U64 capture_right = (1ULL << pos) >> 7;
+
+            if (x > 0) { // Ensure left diagonal capture stays on the board
+                if (capture_left & opponent_pieces) {
+                    pawn_moves |= capture_left;
+                }
+            }
+
+            if (x < 7) { // Ensure right diagonal capture stays on the board
+                if (capture_right & opponent_pieces) {
+                    pawn_moves |= capture_right;
+                }
+            }
+
+            // TODO: en passant capture
+        }
+
+        return pawn_moves;
+    }
+
+    // TODO
+    U64 get_king_moves(bitboard_t& board, int x, int y) {
+        return 0ULL;
+
+        // check for check
+        // check for en passant
+    }
+}
+
 namespace moves {
 
 piece_t make_move(board_t& board, const move_t& move) {

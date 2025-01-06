@@ -12,3 +12,14 @@
 
 # Week 4
 - Debugging negamax (Rook going missing). Found the problem, now working till depth 4 in reasonable time.
+
+# Christmas Holidays
+- Initial bitboard implementation
+- Bitboards for each of the pieces
+- making moves, capturing, promotion with bitboards
+- determining legal moves for:
+  * knights
+  * rooks
+  * bishops
+  * queen
+  * pawns
