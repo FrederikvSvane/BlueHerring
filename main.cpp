@@ -18,9 +18,9 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
 
     // create a new file called that and write the one move
 
-    tests::run_rules_test_suite();
-    tests::run_speed_test_suite();
-    tests::run_perft_suite();
+    // tests::run_rules_test_suite();
+    // tests::run_speed_test_suite();
+    // tests::run_perft_suite();
 
     // Initalising the board
     board_t board;
