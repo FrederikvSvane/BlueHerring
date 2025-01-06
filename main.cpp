@@ -21,7 +21,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     vector<string> string_moves = read_moves_from_input_file(&input_file_name);
     vector<move_t> moves        = translate_moves(string_moves);
 
-    string book_name = "small_book.csv";
+    string book_name = "big_book.csv";
     string book_move = get_move_from_book(&book_name, string_moves);
 
     if (book_move != "") {
