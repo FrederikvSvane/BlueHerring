@@ -18,7 +18,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, bool player) {
   vector<move_t> possible_moves = moves::get_all_moves(board);
   
   if (player) {
-    int max_score = -INFINITY;
+    int max_score = -2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
@@ -37,7 +37,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, bool player) {
     return max_score;
   } 
   else {
-    int min_score = INFINITY;
+    int min_score = 2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
@@ -68,7 +68,7 @@ move_t get_best_move(board_t &board, int depth, int alpha, int beta, bool player
   move_t best_move = possible_moves[0];
 
   if (player) {
-    int best_score = -INFINITY;
+    int best_score = -2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
@@ -84,7 +84,7 @@ move_t get_best_move(board_t &board, int depth, int alpha, int beta, bool player
     }
   }
   else {
-    int best_score = INFINITY;
+    int best_score = 2147483647;
 
     for (move_t move : possible_moves) {
       // Add move to board
