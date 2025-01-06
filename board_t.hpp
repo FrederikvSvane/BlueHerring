@@ -62,7 +62,7 @@ struct bitboard_t {
     int en_passant_x;
     int en_passant_y;
 
-    inline U64 single_bitmask(int square_idx) {
+    inline U64 single_bitmask(int square_idx) { // Pass an index (0-63) and convert to bitmask
         return 1ULL << square_idx;
     }
 
@@ -94,7 +94,7 @@ struct bitboard_t {
         }
     }
 
-    square_t at(int x, int y) { // Pass an index (0-63) and convert to bitboard
+    square_t at(int x, int y) {
         int bit = y*8 + x;
         
         if (bit < 0 || bit >= 64) {
@@ -122,6 +122,8 @@ struct bitboard_t {
         // No piece is found, return empty square
         return {bit % 8, bit / 8, false, {PieceType::EMPTY, Color::NONE}};
     }
+
+
 
     U64* get_board_for_piece(PieceType type, Color color) {
         if (color == Color::WHITE) {

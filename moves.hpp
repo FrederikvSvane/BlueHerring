@@ -10,6 +10,48 @@
 #include <vector>
 
 namespace bit_moves {
+
+    // Precomputed king moves table (indexed by square position)
+    static const U64 king_attack_table[64] = {
+        0x0000000000000302ULL, 0x0000000000000705ULL, 0x0000000000000E0AULL, 0x0000000000001C14ULL,
+        0x0000000000003828ULL, 0x0000000000007050ULL, 0x000000000000E0A0ULL, 0x000000000000C040ULL,
+        0x0000000000030203ULL, 0x0000000000070507ULL, 0x00000000000E0A0EULL, 0x00000000001C141CULL,
+        0x0000000000382838ULL, 0x0000000000705070ULL, 0x0000000000E0A0E0ULL, 0x0000000000C040C0ULL,
+        0x0000000003020300ULL, 0x0000000007050700ULL, 0x000000000E0A0E00ULL, 0x000000001C141C00ULL,
+        0x0000000038283800ULL, 0x0000000070507000ULL, 0x00000000E0A0E000ULL, 0x00000000C040C000ULL,
+        0x0000000302030000ULL, 0x0000000705070000ULL, 0x0000000E0A0E0000ULL, 0x0000001C141C0000ULL,
+        0x0000003828380000ULL, 0x0000007050700000ULL, 0x000000E0A0E00000ULL, 0x000000C040C00000ULL,
+        0x0000030203000000ULL, 0x0000070507000000ULL, 0x00000E0A0E000000ULL, 0x00001C141C000000ULL,
+        0x0000382838000000ULL, 0x0000705070000000ULL, 0x0000E0A0E0000000ULL, 0x0000C040C0000000ULL,
+        0x0003020300000000ULL, 0x0007050700000000ULL, 0x000E0A0E00000000ULL, 0x001C141C00000000ULL,
+        0x0038283800000000ULL, 0x0070507000000000ULL, 0x00E0A0E000000000ULL, 0x00C040C000000000ULL,
+        0x0302030000000000ULL, 0x0705070000000000ULL, 0x0E0A0E0000000000ULL, 0x1C141C0000000000ULL,
+        0x3828380000000000ULL, 0x7050700000000000ULL, 0xE0A0E00000000000ULL, 0xC040C00000000000ULL,
+        0x0203000000000000ULL, 0x0507000000000000ULL, 0x0A0E000000000000ULL, 0x141C000000000000ULL,
+        0x2838000000000000ULL, 0x5070000000000000ULL, 0xA0E0000000000000ULL, 0x40C0000000000000ULL
+    };
+
+    // Precomputed knight moves table (indexed by square position)
+    static const U64 knight_attack_table[64] = {
+        0x0000000000020400ULL, 0x0000000000050800ULL, 0x00000000000A1100ULL, 0x0000000000142200ULL,
+        0x0000000000284400ULL, 0x0000000000508800ULL, 0x0000000000A01000ULL, 0x0000000000402000ULL,
+        0x0000000002040004ULL, 0x0000000005080008ULL, 0x000000000A110011ULL, 0x0000000014220022ULL,
+        0x0000000028440044ULL, 0x0000000050880088ULL, 0x00000000A0100010ULL, 0x0000000040200020ULL,
+        0x0000000204000402ULL, 0x0000000508000805ULL, 0x0000000A1100110AULL, 0x0000001422002214ULL,
+        0x0000002844004428ULL, 0x0000005088008850ULL, 0x000000A0100010A0ULL, 0x0000004020002040ULL,
+        0x0000020400040200ULL, 0x0000050800080500ULL, 0x00000A1100110A00ULL, 0x0000142200221400ULL,
+        0x0000284400442800ULL, 0x0000508800885000ULL, 0x0000A0100010A000ULL, 0x0000402000204000ULL,
+        0x0002040004020000ULL, 0x0005080008050000ULL, 0x000A1100110A0000ULL, 0x0014220022140000ULL,
+        0x0028440044280000ULL, 0x0050880088500000ULL, 0x00A0100010A00000ULL, 0x0040200020400000ULL,
+        0x0204000402000000ULL, 0x0508000805000000ULL, 0x0A1100110A000000ULL, 0x1422002214000000ULL,
+        0x2844004428000000ULL, 0x5088008850000000ULL, 0xA0100010A0000000ULL, 0x4020002040000000ULL,
+        0x0400040200000000ULL, 0x0800080500000000ULL, 0x1100110A00000000ULL, 0x2200221400000000ULL,
+        0x4400442800000000ULL, 0x8800885000000000ULL, 0x100010A000000000ULL, 0x2000204000000000ULL,
+        0x0004020000000000ULL, 0x0008050000000000ULL, 0x00110A0000000000ULL, 0x0022140000000000ULL,
+        0x0044280000000000ULL, 0x0088500000000000ULL, 0x0010A00000000000ULL, 0x0020400000000000ULL
+    };
+
+
     piece_t make_move(bitboard_t& board, const move_t& move) { // In the future, a move_t could simply be two bits, or a bitboard with the from/to bits set to 1
         // Determine which piece is being moved
         piece_t moving_piece = board.at(move.from_x, move.from_y).piece;
@@ -244,29 +286,65 @@ namespace bit_moves {
         return diagonal_moves;
     }
 
+    // Pass the color under attack. Does not take en passant into account
+    // Note: This should maybe be under the board class.
+    bool is_square_under_attack(bitboard_t& board, Color color, int x, int y) {
+        int pos = y * 8 + x;
+
+        // King
+        if ((king_attack_table[pos] & *board.get_board_for_piece(PieceType::KING, !color)) != 0) {
+            return true;
+        }
+
+        // Knight
+        if ((knight_attack_table[pos] & *board.get_board_for_piece(PieceType::KNIGHT, !color)) != 0ULL) {
+            return true;
+        }
+
+        U64 allied_pieces = board.get_all_friendly_pieces(color);
+        U64 occupied = board.get_all_pieces();
+
+        U64 orthogonal_moves = get_orthogonal_moves(occupied,allied_pieces,pos);
+        U64 diagonal_moves = get_diagonal_moves(occupied,allied_pieces,pos);
+
+        U64 rooks = *board.get_board_for_piece(PieceType::ROOK, !color);
+        U64 bishops = *board.get_board_for_piece(PieceType::BISHOP, !color);
+        U64 queens = *board.get_board_for_piece(PieceType::QUEEN, !color);
+
+        // Rook & Queen
+        if (orthogonal_moves & (rooks | queens)) {
+            return true;
+        }
+
+        // Bishop & Queen
+        if (diagonal_moves & (bishops | queens)) {
+            return true;
+        }
+
+
+        // Pawns
+        U64 pawns = *board.get_board_for_piece(PieceType::PAWN, !color);
+        U64 pawn_attacks = 0ULL;
+
+        if (color == Color::WHITE) {
+
+            if (x > 0) {pawn_attacks |= (1ULL << pos << 7);}
+            if (x < 7) {pawn_attacks |= (1ULL << pos << 9);}
+
+            if (pos < 56 && (pawns & pawn_attacks) != 0ULL) return true;
+        } else {
+            if (x > 0) {pawn_attacks |= ((1ULL << pos) >> 9);}
+            if (x < 7) {pawn_attacks |= ((1ULL << pos) >> 7);}
+
+            if (pos > 7 && (pawns & pawn_attacks) != 0ULL) return true;
+        }
+
+        return false;
+    }
+
     // Returns a bitmask with ones on the standard knight squares for the given position
     U64 get_knight_moves(bitboard_t& board, int x, int y) {
         int pos = y*8 + x;
-
-        // Precomputed knight moves table (indexed by square position)
-        static const U64 knight_attack_table[64] = {
-            0x0000000000020400ULL, 0x0000000000050800ULL, 0x00000000000A1100ULL, 0x0000000000142200ULL,
-            0x0000000000284400ULL, 0x0000000000508800ULL, 0x0000000000A01000ULL, 0x0000000000402000ULL,
-            0x0000000002040004ULL, 0x0000000005080008ULL, 0x000000000A110011ULL, 0x0000000014220022ULL,
-            0x0000000028440044ULL, 0x0000000050880088ULL, 0x00000000A0100010ULL, 0x0000000040200020ULL,
-            0x0000000204000402ULL, 0x0000000508000805ULL, 0x0000000A1100110AULL, 0x0000001422002214ULL,
-            0x0000002844004428ULL, 0x0000005088008850ULL, 0x000000A0100010A0ULL, 0x0000004020002040ULL,
-            0x0000020400040200ULL, 0x0000050800080500ULL, 0x00000A1100110A00ULL, 0x0000142200221400ULL,
-            0x0000284400442800ULL, 0x0000508800885000ULL, 0x0000A0100010A000ULL, 0x0000402000204000ULL,
-            0x0002040004020000ULL, 0x0005080008050000ULL, 0x000A1100110A0000ULL, 0x0014220022140000ULL,
-            0x0028440044280000ULL, 0x0050880088500000ULL, 0x00A0100010A00000ULL, 0x0040200020400000ULL,
-            0x0204000402000000ULL, 0x0508000805000000ULL, 0x0A1100110A000000ULL, 0x1422002214000000ULL,
-            0x2844004428000000ULL, 0x5088008850000000ULL, 0xA0100010A0000000ULL, 0x4020002040000000ULL,
-            0x0400040200000000ULL, 0x0800080500000000ULL, 0x1100110A00000000ULL, 0x2200221400000000ULL,
-            0x4400442800000000ULL, 0x8800885000000000ULL, 0x100010A000000000ULL, 0x2000204000000000ULL,
-            0x0004020000000000ULL, 0x0008050000000000ULL, 0x00110A0000000000ULL, 0x0022140000000000ULL,
-            0x0044280000000000ULL, 0x0088500000000000ULL, 0x0010A00000000000ULL, 0x0020400000000000ULL
-        };
 
         // Get the move table for the given square
         U64 knight_moves = knight_attack_table[pos];
@@ -320,7 +398,7 @@ namespace bit_moves {
     }
 
     U64 get_pawn_moves(bitboard_t& board, int x, int y) {
-        int pos = y * 8 + x; // Square index (0-63)
+        int pos = y * 8 + x; 
         Color pawn_color = (board.board_w_P & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
 
         // Occupied squares
@@ -399,12 +477,30 @@ namespace bit_moves {
         return pawn_moves;
     }
 
-    // TODO
     U64 get_king_moves(bitboard_t& board, int x, int y) {
-        return 0ULL;
+        int pos = y * 8 + x;
+        
+        U64 raw_king_moves = king_attack_table[pos];
+
+        Color king_color = (board.board_w_K & (1ULL << pos)) != 0 ? Color::WHITE : Color::BLACK;
+
+        // Exclude friendly pieces
+        U64 friendly_pieces = board.get_all_friendly_pieces(king_color);
+        U64 king_moves = raw_king_moves & ~friendly_pieces;
 
         // check for check
-        // check for en passant
+        U64 valid_moves = 0ULL;
+        while (king_moves) {
+            int move_pos = __builtin_ffsll(king_moves) - 1; // Get index of the first set bit
+            king_moves &= king_moves - 1; // Clear the processed bit
+
+            // Check if the square is under attack
+            if (!is_square_under_attack(board, king_color, move_pos % 8, move_pos / 8)) {
+                valid_moves |= (1ULL << move_pos); // Add valid move
+            }
+        }
+        
+        return valid_moves;
     }
 }
 
