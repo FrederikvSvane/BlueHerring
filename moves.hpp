@@ -9,7 +9,7 @@
 #include <stdint.h> //had to include this, otherwise didn't compile on my pc
 #include <vector>
 
-namespace bit_moves {
+namespace bitboard_moves {
 
 // Precomputed king moves table (indexed by square position)
 static const U64 king_attack_table[64] = {
@@ -308,9 +308,9 @@ U64 get_diagonal_moves(U64 occupied, U64 friendly_pieces, int pos) {
             if (square < 0 || square >= 64)
                 break;
 
-            if (dir == -9) {
-                printf("square %i\n", square);
-            }
+            // if (dir == -9) {
+            //     printf("square %i\n", square);
+            // }
 
             // Handle edge cases for diagonal wrapping
             if ((dir == 9 && square % 8 == 0) ||  // North-East wraps around
@@ -689,7 +689,7 @@ vector<bitboard_move_t> generate_all_moves_for_color(bitboard_t& board, Color co
 
 } // namespace bit_moves
 
-namespace moves {
+namespace coordinate_moves {
 
 piece_t make_move(board_t& board, const move_t& move) {
     square_t& from_square = board.at(move.from_x, move.from_y);
@@ -1445,6 +1445,6 @@ vector<move_t> generate_all_moves_for_color(board_t& board, Color color) {
     return all_moves;
 }
 
-} // namespace moves
+} // namespace coordinate_moves
 
 #endif

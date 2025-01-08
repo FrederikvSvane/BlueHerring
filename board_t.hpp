@@ -586,6 +586,88 @@ struct bitboard_t {
         board_b_K = 0x1000000000000000ULL;
     }
 
+    void initialize_board_from_fen(const string& fen) {
+        // Reset all bitboards to 0
+        board_w_P = board_w_N = board_w_B = board_w_R = board_w_Q = board_w_K = 0ULL;
+        board_b_P = board_b_N = board_b_B = board_b_R = board_b_Q = board_b_K = 0ULL;
+
+        vector<string> fen_parts = split(fen, ' ');
+        const string& position   = fen_parts[0];
+
+        int x = 0, y = 7; // start from top row
+        for (char c : position) {
+            if (c == '/') {
+                x = 0;
+                y--;
+                continue;
+            }
+
+            if (isdigit(c)) {
+                x += c - '0';
+                continue;
+            }
+
+            // Calculate bit position
+            int bit_pos  = y * 8 + x;
+            U64 bit_mask = 1ULL << bit_pos;
+
+            // Set the appropriate bit in the corresponding bitboard
+            if (isupper(c)) { // White pieces
+                switch (c) {
+                case 'P': board_w_P |= bit_mask; break;
+                case 'N': board_w_N |= bit_mask; break;
+                case 'B': board_w_B |= bit_mask; break;
+                case 'R': board_w_R |= bit_mask; break;
+                case 'Q': board_w_Q |= bit_mask; break;
+                case 'K': board_w_K |= bit_mask; break;
+                }
+            } else { // Black pieces
+                switch (tolower(c)) {
+                case 'p': board_b_P |= bit_mask; break;
+                case 'n': board_b_N |= bit_mask; break;
+                case 'b': board_b_B |= bit_mask; break;
+                case 'r': board_b_R |= bit_mask; break;
+                case 'q': board_b_Q |= bit_mask; break;
+                case 'k': board_b_K |= bit_mask; break;
+                }
+            }
+            x++;
+        }
+
+        // Reset castling rights first
+        white_king_side_castle  = false;
+        white_queen_side_castle = false;
+        black_king_side_castle  = false;
+        black_queen_side_castle = false;
+
+        // Parse active color (second field)
+        if (fen_parts.size() > 1) {
+            active_color = (fen_parts[1] == "w") ? Color::WHITE : Color::BLACK;
+        } else {
+            active_color = Color::WHITE;
+        }
+
+        if (fen_parts.size() > 2) {
+            // Set castling rights based on FEN
+            string castling = fen_parts[2];
+            if (castling != "-") {
+                white_king_side_castle  = castling.find('K') != string::npos;
+                white_queen_side_castle = castling.find('Q') != string::npos;
+                black_king_side_castle  = castling.find('k') != string::npos;
+                black_queen_side_castle = castling.find('q') != string::npos;
+            }
+
+            // Set en passant square if exists
+            if (fen_parts.size() > 3 && fen_parts[3] != "-") {
+                int ep_x          = fen_parts[3][0] - 'a';
+                int ep_y          = fen_parts[3][1] - '1';
+                en_passant_square = 1ULL << (ep_y * 8 + ep_x);
+            } else {
+                en_passant_square = 0ULL;
+            }
+        }
+    }
+
     bool is_path_clear(U64 path_mask, U64 occupied_squares) const {
         // If any bit in path_mask is set in occupied_squares, the path is blocked
         return !(path_mask & occupied_squares);

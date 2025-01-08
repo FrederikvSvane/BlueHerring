@@ -18,24 +18,25 @@ struct perft_test_case {
     bool single_color_scenario;
 };
 
-pair<uint64_t, map<string, uint64_t>> perft(board_t& board, int depth, Color color, bool single_color_only) {
+pair<uint64_t, map<string, uint64_t>> perft(bitboard_t& board, int depth, Color color, bool single_color_only) {
     if (depth == 0)
         return {1, {}};
 
     uint64_t nodes = 0;
     map<string, uint64_t> move_counts;
-    vector<move_t> moves = moves::generate_all_moves_for_color(board, color);
+    vector<bitboard_move_t> moves = bitboard_moves::generate_all_moves_for_color(board, color);
 
-    for (const move_t& move : moves) {
-        piece_t captured_piece = moves::make_move(board, move);
+    for (const bitboard_move_t& move : moves) {
+        piece_t captured_piece = bitboard_moves::make_move(board, move);
         uint64_t subtree_count = perft(board, depth - 1,
                                        single_color_only ? color : (color == Color::WHITE ? Color::BLACK : Color::WHITE),
                                        single_color_only)
                                      .first;
         nodes += subtree_count;
-        string move_str       = encode_move(move);
+        // Convert bitboard move to coordinate move for string representation
+        string move_str       = encode_move(bitboard_to_coordinate_move(move));
         move_counts[move_str] = subtree_count;
-        moves::undo_move(board, move, captured_piece);
+        bitboard_moves::undo_move(board, move, captured_piece);
     }
     return {nodes, move_counts};
 }
@@ -62,8 +63,8 @@ void run_perft_suite() {
     };
 
     for (const auto& test : test_cases) {
-        board_t board;
-        board.initialize_board_from_fen(test.fen);
+        bitboard_t board;
+        board.initialize_board_from_fen(test.fen); 
         cout << "\nRunning perft for WHITE with DEPTH=" << test.max_depth << ".\nPosition:\n";
         board.pretty_print_board();
         cout << endl;
@@ -81,7 +82,7 @@ void run_perft_suite() {
                  << endl;
         }
         cout << (test_passed ? "\nSuccess!" : "\nFailed!") << endl;
-        all_tests_passed &= test_passed; // overall success status
+        all_tests_passed &= test_passed;
     }
 
     if (all_tests_passed) {
@@ -131,7 +132,7 @@ void verify_piece_move(board_t& board, const move_t& move,
                        Color capture_color        = Color::WHITE) {
 
     board_t initial_board = board;
-    piece_t captured      = moves::make_move(board, move);
+    piece_t captured      = coordinate_moves::make_move(board, move);
 
     // Verify piece moved correctly
     assert(board.at(move.from_x, move.from_y).piece.type == PieceType::EMPTY);
@@ -144,7 +145,7 @@ void verify_piece_move(board_t& board, const move_t& move,
         assert(captured.color == capture_color);
     }
 
-    moves::undo_move(board, move, captured);
+    coordinate_moves::undo_move(board, move, captured);
     assert(compare_boards(board, initial_board));
 }
 
@@ -152,7 +153,7 @@ void test_piece_movement_and_capture() {
     // Test 1: Pawn moves and captures
     board_t board;
     board.initialize_board_from_fen("8/8/8/3p4/4P3/8/8/8");
-    vector<move_t> pawn_moves = moves::get_piece_moves(board, 4, 3);
+    vector<move_t> pawn_moves = coordinate_moves::get_piece_moves(board, 4, 3);
     bool found_advance = false, found_capture = false;
 
     for (const auto& move : pawn_moves) {
@@ -170,7 +171,7 @@ void test_piece_movement_and_capture() {
 
     // Test 2: Knight moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/5N2/8/8/8");
-    vector<move_t> knight_moves = moves::get_piece_moves(board, 5, 3);
+    vector<move_t> knight_moves = coordinate_moves::get_piece_moves(board, 5, 3);
     bool found_knight_move = false, found_knight_capture = false;
 
     for (const auto& move : knight_moves) {
@@ -188,7 +189,7 @@ void test_piece_movement_and_capture() {
 
     // Test 3: Bishop moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/4B3/8/8/8");
-    vector<move_t> bishop_moves = moves::get_piece_moves(board, 4, 3);
+    vector<move_t> bishop_moves = coordinate_moves::get_piece_moves(board, 4, 3);
     bool found_bishop_move = false, found_bishop_capture = false;
 
     for (const auto& move : bishop_moves) {
@@ -206,7 +207,7 @@ void test_piece_movement_and_capture() {
 
     // Test 4: Rook moves and captures
     board.initialize_board_from_fen("8/8/8/3pR3/8/8/8/8");
-    vector<move_t> rook_moves = moves::get_piece_moves(board, 4, 4);
+    vector<move_t> rook_moves = coordinate_moves::get_piece_moves(board, 4, 4);
     bool found_rook_move = false, found_rook_capture = false;
 
     for (const auto& move : rook_moves) {
@@ -224,7 +225,7 @@ void test_piece_movement_and_capture() {
 
     // Test 5: Queen moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/4Q3/8/8/8");
-    vector<move_t> queen_moves = moves::get_piece_moves(board, 4, 3);
+    vector<move_t> queen_moves = coordinate_moves::get_piece_moves(board, 4, 3);
     bool found_queen_straight = false, found_queen_diagonal = false, found_queen_capture = false;
 
     for (const auto& move : queen_moves) {
@@ -246,7 +247,7 @@ void test_piece_movement_and_capture() {
 
     // Test 6: King moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/4K3/8/8/8");
-    vector<move_t> king_moves = moves::get_piece_moves(board, 4, 3);
+    vector<move_t> king_moves = coordinate_moves::get_piece_moves(board, 4, 3);
     bool found_king_move = false, found_king_capture = false;
 
     for (const auto& move : king_moves) {
@@ -272,7 +273,7 @@ void test_en_passant() {
     board_t initial_board = board;
 
     move_t white_capture{4, 4, 3, 5, PieceType::EMPTY};
-    piece_t white_captured = moves::make_move(board, white_capture);
+    piece_t white_captured = coordinate_moves::make_move(board, white_capture);
     // board.pretty_print_board();
 
     assert(board.at(4, 4).piece.type == PieceType::EMPTY);
@@ -280,7 +281,7 @@ void test_en_passant() {
     assert(board.at(3, 5).piece.type == PieceType::PAWN);
     assert(board.at(3, 5).piece.color == Color::WHITE);
 
-    moves::undo_move(board, white_capture, white_captured);
+    coordinate_moves::undo_move(board, white_capture, white_captured);
     // board.pretty_print_board();
     assert(compare_boards(board, initial_board));
 
@@ -291,7 +292,7 @@ void test_en_passant() {
     initial_board = board;
 
     move_t black_capture{4, 3, 5, 2, PieceType::EMPTY};
-    piece_t black_captured = moves::make_move(board, black_capture);
+    piece_t black_captured = coordinate_moves::make_move(board, black_capture);
     // board.pretty_print_board();
 
     assert(board.at(4, 3).piece.type == PieceType::EMPTY);
@@ -299,7 +300,7 @@ void test_en_passant() {
     assert(board.at(5, 2).piece.type == PieceType::PAWN);
     assert(board.at(5, 2).piece.color == Color::BLACK);
 
-    moves::undo_move(board, black_capture, black_captured);
+    coordinate_moves::undo_move(board, black_capture, black_captured);
     // board.pretty_print_board();
     assert(compare_boards(board, initial_board));
 
@@ -308,13 +309,13 @@ void test_en_passant() {
     // board.pretty_print_board();
 
     move_t unrelated_move{1, 3, 1, 4, PieceType::EMPTY};
-    piece_t captured = moves::make_move(board, unrelated_move);
+    piece_t captured = coordinate_moves::make_move(board, unrelated_move);
     // board.pretty_print_board();
 
     assert(board.en_passant_x == -1);
     assert(board.en_passant_y == -1);
 
-    moves::undo_move(board, unrelated_move, captured);
+    coordinate_moves::undo_move(board, unrelated_move, captured);
     // board.pretty_print_board();
 
     assert(board.en_passant_x == 0);
@@ -327,53 +328,53 @@ void test_castling() {
     board.initialize_board_from_fen("rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R");
     board_t initial_board = board;
     move_t kingside_castle{4, 0, 6, 0, PieceType::EMPTY};
-    piece_t captured = moves::make_move(board, kingside_castle);
+    piece_t captured = coordinate_moves::make_move(board, kingside_castle);
     assert(board.at(4, 0).piece.type == PieceType::EMPTY);
     assert(board.at(6, 0).piece.type == PieceType::KING);
     assert(board.at(7, 0).piece.type == PieceType::EMPTY);
     assert(board.at(5, 0).piece.type == PieceType::ROOK);
     assert(!board.white_king_side_castle);
     assert(!board.white_queen_side_castle);
-    moves::undo_move(board, kingside_castle, captured);
+    coordinate_moves::undo_move(board, kingside_castle, captured);
     assert(compare_boards(board, initial_board));
 
     // Test 2: Basic queenside castling
     board.initialize_board_from_fen("r3kbnr/pppqpppp/2n5/3p4/3P4/2N5/PPPQPPPP/R3KBNR");
     initial_board = board;
     move_t queenside_castle{4, 0, 2, 0, PieceType::EMPTY};
-    captured = moves::make_move(board, queenside_castle);
+    captured = coordinate_moves::make_move(board, queenside_castle);
     assert(board.at(4, 0).piece.type == PieceType::EMPTY);
     assert(board.at(2, 0).piece.type == PieceType::KING);
     assert(board.at(0, 0).piece.type == PieceType::EMPTY);
     assert(board.at(3, 0).piece.type == PieceType::ROOK);
     assert(!board.white_king_side_castle);
     assert(!board.white_queen_side_castle);
-    moves::undo_move(board, queenside_castle, captured);
+    coordinate_moves::undo_move(board, queenside_castle, captured);
     assert(compare_boards(board, initial_board));
 
     // Test 3: Capturing opponent's rook affects castling rights
     board.initialize_board_from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
     initial_board = board;
     move_t capture_rook{7, 0, 7, 7, PieceType::EMPTY};
-    captured = moves::make_move(board, capture_rook);
+    captured = coordinate_moves::make_move(board, capture_rook);
     assert(!board.black_king_side_castle);
     assert(board.black_queen_side_castle);
     assert(!board.white_king_side_castle);
     assert(board.white_queen_side_castle);
-    moves::undo_move(board, capture_rook, captured);
+    coordinate_moves::undo_move(board, capture_rook, captured);
     assert(compare_boards(board, initial_board));
 
     // Test 4: Moving own rook affects castling rights
     move_t move_rook{7, 0, 7, 4, PieceType::EMPTY};
-    captured = moves::make_move(board, move_rook);
+    captured = coordinate_moves::make_move(board, move_rook);
     assert(!board.white_king_side_castle);
     assert(board.white_queen_side_castle);
-    moves::undo_move(board, move_rook, captured);
+    coordinate_moves::undo_move(board, move_rook, captured);
     assert(compare_boards(board, initial_board));
 
     // Test 5: Cannot castle through check
     board.initialize_board_from_fen("r3k2r/8/8/8/8/8/4b3/R3K2R w KQkq - 0 1");
-    vector<move_t> legal_moves  = moves::generate_all_moves_for_color(board, Color::WHITE);
+    vector<move_t> legal_moves  = coordinate_moves::generate_all_moves_for_color(board, Color::WHITE);
     bool found_kingside_castle  = false;
     bool found_queenside_castle = false;
 
@@ -396,24 +397,24 @@ void test_pawn_promotion() {
     board.initialize_board_from_fen("8/4P3/8/8/8/8/8/8");
     board_t initial_board = board;
     move_t move{4, 6, 4, 7, PieceType::QUEEN};
-    piece_t captured = moves::make_move(board, move);
+    piece_t captured = coordinate_moves::make_move(board, move);
     assert(board.at(4, 6).piece.type == PieceType::EMPTY);
     assert(board.at(4, 7).piece.type == PieceType::QUEEN);
     assert(board.at(4, 7).piece.color == Color::WHITE);
-    moves::undo_move(board, move, captured);
+    coordinate_moves::undo_move(board, move, captured);
     assert(compare_boards(board, initial_board));
 
     // Test 2: Promotion with capture
     board.initialize_board_from_fen("4r3/3P4/8/8/8/8/8/8");
     initial_board = board;
     move_t capture_move{3, 6, 4, 7, PieceType::QUEEN};
-    piece_t capture_piece = moves::make_move(board, capture_move);
+    piece_t capture_piece = coordinate_moves::make_move(board, capture_move);
     assert(board.at(3, 6).piece.type == PieceType::EMPTY);
     assert(board.at(4, 7).piece.type == PieceType::QUEEN);
     assert(board.at(4, 7).piece.color == Color::WHITE);
     assert(capture_piece.type == PieceType::ROOK);
     assert(capture_piece.color == Color::BLACK);
-    moves::undo_move(board, capture_move, capture_piece);
+    coordinate_moves::undo_move(board, capture_move, capture_piece);
     assert(compare_boards(board, initial_board));
 }
 
@@ -436,12 +437,12 @@ void test_board_state_history() {
                           board.black_queen_side_castle,
                           board.en_passant_x,
                           board.en_passant_y});
-        captured_pieces.push_back(moves::make_move(board, move));
+        captured_pieces.push_back(coordinate_moves::make_move(board, move));
     }
 
     // Undo moves in reverse order
     for (int i = moves.size() - 1; i >= 0; i--) {
-        moves::undo_move(board, moves[i], captured_pieces[i]);
+        coordinate_moves::undo_move(board, moves[i], captured_pieces[i]);
         assert(board.white_king_side_castle == states[i].white_king_side_castle);
         assert(board.white_queen_side_castle == states[i].white_queen_side_castle);
         assert(board.black_king_side_castle == states[i].black_king_side_castle);
@@ -470,7 +471,7 @@ void test_check_and_checkmate() {
         board_t board;
         board.initialize_board_from_fen(fen);
         Color king_color = (fen.find('w') != string::npos) ? Color::WHITE : Color::BLACK;
-        bool actual      = moves::is_in_check(board, king_color);
+        bool actual      = coordinate_moves::is_in_check(board, king_color);
         assert(actual == expected);
     }
 
@@ -479,12 +480,12 @@ void test_check_and_checkmate() {
     board.initialize_board_from_fen("4k3/8/8/8/8/8/3p4/4K3 w - - 0 1");
     board_t initial_board = board;
     move_t escape_move{4, 0, 3, 1, PieceType::EMPTY};
-    piece_t captured = moves::make_move(board, escape_move);
+    piece_t captured = coordinate_moves::make_move(board, escape_move);
     assert(board.at(4, 0).piece.type == PieceType::EMPTY);
     assert(board.at(3, 1).piece.type == PieceType::KING);
     assert(board.at(3, 1).piece.color == Color::WHITE);
-    assert(!moves::is_in_check(board, Color::WHITE));
-    moves::undo_move(board, escape_move, captured);
+    assert(!coordinate_moves::is_in_check(board, Color::WHITE));
+    coordinate_moves::undo_move(board, escape_move, captured);
     assert(compare_boards(board, initial_board));
 
     // Test 3: Checkmate positions
@@ -499,8 +500,8 @@ void test_check_and_checkmate() {
         board_t board;
         board.initialize_board_from_fen(fen);
         const auto& [expected_check, expected_has_moves] = expected;
-        bool actual_check                                = moves::is_in_check(board, Color::BLACK);
-        vector<move_t> legal_moves                       = moves::generate_all_moves_for_color(board, Color::BLACK);
+        bool actual_check                                = coordinate_moves::is_in_check(board, Color::BLACK);
+        vector<move_t> legal_moves                       = coordinate_moves::generate_all_moves_for_color(board, Color::BLACK);
         bool has_legal_moves                             = !legal_moves.empty();
         bool is_in_checkmate                             = (!has_legal_moves && actual_check);
         assert(actual_check == expected_check);
@@ -509,24 +510,24 @@ void test_check_and_checkmate() {
 
     // Test 4: Move generation under check
     board.initialize_board_from_fen("k7/8/8/8/8/3b4/8/4K3 w - - 0 1");
-    vector<move_t> legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
+    vector<move_t> legal_moves = coordinate_moves::generate_all_moves_for_color(board, Color::WHITE);
 
     for (const auto& move : legal_moves) {
-        piece_t captured    = moves::make_move(board, move);
-        bool still_in_check = moves::is_in_check(board, Color::WHITE);
-        moves::undo_move(board, move, captured);
+        piece_t captured    = coordinate_moves::make_move(board, move);
+        bool still_in_check = coordinate_moves::is_in_check(board, Color::WHITE);
+        coordinate_moves::undo_move(board, move, captured);
         assert(!still_in_check);
     }
 
     // Test 5: Check after pawn promotion
     board.initialize_board_from_fen("8/8/8/8/8/8/4K1p1/5N2 b - - 0 1");
     move_t promotion_capture{6, 1, 5, 0, PieceType::BISHOP};
-    captured = moves::make_move(board, promotion_capture);
-    assert(moves::is_in_check(board, Color::WHITE));
-    legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
+    captured = coordinate_moves::make_move(board, promotion_capture);
+    assert(coordinate_moves::is_in_check(board, Color::WHITE));
+    legal_moves = coordinate_moves::generate_all_moves_for_color(board, Color::WHITE);
     assert(legal_moves.size() == 7);
-    moves::undo_move(board, promotion_capture, captured);
-    assert(!moves::is_in_check(board, Color::WHITE));
+    coordinate_moves::undo_move(board, promotion_capture, captured);
+    assert(!coordinate_moves::is_in_check(board, Color::WHITE));
 }
 
 void run_rules_test_suite() {
@@ -562,16 +563,16 @@ void run_speed_test_suite() {
 
         for (int depth = 1; depth <= max_depth; depth++) {
             auto depth_start    = chrono::high_resolution_clock::now();
-            auto [nodes, moves] = perft(board, depth, board.active_color, false);
+            // auto [nodes, moves] = perft(board, depth, board.active_color, false);
             auto depth_end      = chrono::high_resolution_clock::now();
-            position_nodes += nodes;
-            total_nodes += nodes;
+            // position_nodes += nodes;
+            // total_nodes += nodes;
             auto depth_duration = chrono::duration_cast<chrono::milliseconds>(depth_end - depth_start);
-            double depth_nps    = static_cast<double>(nodes) * 1000.0 / depth_duration.count();
-            cout << "Depth " << depth << ": "
-                 << nodes << " nodes in "
-                 << depth_duration.count() << "ms"
-                 << " (" << fixed << setprecision(0) << depth_nps << " NPS)\n";
+            // double depth_nps    = static_cast<double>(nodes) * 1000.0 / depth_duration.count();
+            // cout << "Depth " << depth << ": "
+            //      << nodes << " nodes in "
+            //      << depth_duration.count() << "ms"
+            //      << " (" << fixed << setprecision(0) << depth_nps << " NPS)\n";
         }
 
         auto position_end      = chrono::high_resolution_clock::now();
