@@ -3,3 +3,5 @@ BlueHerring
 /build
 /.vscode
 /main.dSYM
+history.csv
+move.csv
