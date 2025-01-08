@@ -1,9 +1,9 @@
 #include "board_t.hpp"
+#include "engine.hpp"
 #include "eval.hpp"
 #include "file_util.hpp"
 #include "move_t.hpp"
 #include "moves.hpp"
-#include "engine.hpp"
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.csv
 {
@@ -21,37 +21,26 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     // tests::run_speed_test_suite();
     // tests::run_perft_suite();
 
-    // Initalising the board
-    board_t board;
-    board.initialize_starting_board();
-
     bitboard_t bitboard;
     bitboard.initialize_starting_board();
 
-    board.pretty_print_board();
     bitboard.pretty_print_board();
-
 
     // std::cout << "Starting position evaluation: " << eval::evaluate_position(board) << std::endl;
 
-    vector<string> string_moves = read_moves_from_input_file(&input_file_name);
-    vector<move_t> moves        = translate_moves(string_moves);
+    vector<string> string_moves   = read_moves_from_input_file(&input_file_name);
+    vector<bitboard_move_t> moves = translate_to_bitboard_moves(string_moves);
 
-    for (const move_t& move : moves) {
-        moves::make_move(board, move);
+    for (const bitboard_move_t& move : moves) {
         bit_moves::make_move(bitboard, move);
-        // board.pretty_print_board();
+        bitboard.pretty_print_board();
     }
-
-    bitboard.pretty_print_board();
-    bitboard.print_bitboard(bit_moves::get_pawn_moves(bitboard,6,3));
 
     Color color_to_move = (moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
 
-    move_t best_move = eval::get_best_move(board, 3, color_to_move);
-    string best_move_str = encode_move(best_move);
-
-    write_move_to_output_file(&output_file_name, &best_move_str);
+    //move_t best_move     = eval::get_best_move(board, 3, color_to_move);
+    //string best_move_str = encode_move(best_move);
+    //write_move_to_output_file(&output_file_name, &best_move_str);
 
     return 0;
 }
