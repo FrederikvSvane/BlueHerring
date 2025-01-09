@@ -158,7 +158,7 @@ inline vector<bitboard_move_t> get_pawn_moves_from_possible_moves_bitboard(U64 p
         } else {
             moves.emplace_back(from_square, to_square);
         }
-        possible_moves_board &= possible_moves_board - 1;
+        possible_moves_board &= (possible_moves_board - 1);
     }
     return moves;
 }
