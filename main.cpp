@@ -22,7 +22,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     vector<move_t> moves        = translate_moves(string_moves);
 
     string book_name = "big_book.csv";
-    string book_move = get_move_from_book(&book_name, string_moves);
+    string book_move = get_move_from_book(string_moves);
 
     if (book_move != "") {
         write_move_to_output_file(&output_file_name, &book_move);
@@ -39,3 +39,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     write_move_to_output_file(&output_file_name, &best_move_str);
     return 0;
 }
+
+
+

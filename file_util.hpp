@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include "book.hpp"
 
 using namespace std;
 
@@ -21,18 +22,14 @@ vector<string> read_moves_from_input_file(string* file_name) {
     return out;
 }
 
-string get_move_from_book(string* book_name, vector<string> string_moves) {
-    fstream book_file;
-    book_file.open(*book_name);
-
+string get_move_from_book(vector<string> string_moves) {
     string history_str = "";
     for (const auto& move : string_moves) {
         history_str = history_str + move + " ";
     }
 
-    string line;
     vector<string> out;
-    while (getline(book_file, line)) {
+    for (const auto& line : book) {
         if (line[0] == '#') continue;
 
         if (history_str.size() <= line.size() + 5) {
@@ -60,3 +57,5 @@ void append_move_to_input_file(string* file_name, string* move) {
 }
 
 #endif
+
+
