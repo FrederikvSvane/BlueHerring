@@ -7,21 +7,29 @@
 #include "moves.hpp"
 #include "eval.hpp"
 #include "piece_t.hpp"
+#include "move_eval.hpp"
 
 namespace eval{
-int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
+vector<move_t> ordered_moves(board_t board, Color color, int depth){
+  vector<move_t> possible_moves =  moves::generate_all_moves_for_color(board, color);
+      std::sort(possible_moves.begin(), possible_moves.end(), [&board, depth](const move_t& move, const move_t& other) {
+        return better(board, move, other, depth);
+    });
+}
 
+
+int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
   // Check for checkmate
   if (depth == 0) {
     return eval::evaluate_position(board);
   }
 
-  vector<move_t> possible_moves = moves::generate_all_moves_for_color(board, color);
+  vector<move_t> possible_moves = ordered_moves(board, color, depth);
   
   if (color == Color::WHITE) {
     int max_score = -(int)INFINITY;
 
-    for (move_t move : possible_moves) {
+    for (const move_t& move : possible_moves) {
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
@@ -33,18 +41,24 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
       // Undo move from board
       moves::undo_move(board, move, cap_piece);
 
-      // Remove branch if it's irrelevant
+      // Prune branch
       if (beta <= alpha) {
+        if (not move_eval::is_capture(board, move)){  // we found a killer move
+          // if the killer move was not in our array for the current depth, we store it
+          if(move != move_eval::killer_moves[depth][0] && move != move_eval::killer_moves[depth][1]){  
+            move_eval::killer_moves[depth] = {move_eval::killer_moves[depth][1], move};
+          }
+        }
         break;
       }
     }
-
     return max_score;
   } 
+  
   else {
     int min_score = (int)INFINITY;
 
-    for (move_t move : possible_moves) {
+    for (const move_t& move : possible_moves) {
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
@@ -56,21 +70,26 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
       // Undo move from board
       moves::undo_move(board, move, cap_piece);
 
-      // Remove branch if it's irrelevant
+      // Prune branch
       if (beta <= alpha) {
+        if (not move_eval::is_capture(board, move)){  // we found a killer move
+          // if the killer move was not in our array for the current depth, we store it
+          if(move != move_eval::killer_moves[depth][0] && move != move_eval::killer_moves[depth][1]){  
+            move_eval::killer_moves[depth] = {move_eval::killer_moves[depth][1], move};
+          }
+        }
         break;
       }
     }
 
     return min_score;
   }
-
 }
 
 
 move_t get_best_move(board_t &board, int depth, Color color) {
 
-  vector<move_t> possible_moves = moves::generate_all_moves_for_color(board, color);
+  vector<move_t> possible_moves = ordered_moves(board, color, depth);
   for(move_t move: possible_moves){
     //cout << "Moving from: (" << move.from_x << "," << move.from_y << ") to: (" << move.to_x << "," << move.to_y << ")" << endl;
   }
@@ -82,7 +101,7 @@ move_t get_best_move(board_t &board, int depth, Color color) {
   if (color == Color::WHITE) { // Playing as white
     int best_score = -(int)INFINITY;
 
-    for (move_t move : possible_moves) {
+    for (const move_t& move : possible_moves) {
 
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
@@ -101,7 +120,7 @@ move_t get_best_move(board_t &board, int depth, Color color) {
   else { // Playing as black
     int best_score = (int)INFINITY;
 
-    for (move_t move : possible_moves) {
+    for (const move_t& move : possible_moves) {
       // Add move to board
       piece_t cap_piece = moves::make_move(board, move);
 
@@ -118,7 +137,6 @@ move_t get_best_move(board_t &board, int depth, Color color) {
   }
 
   return best_move;
-
 }
 }
 

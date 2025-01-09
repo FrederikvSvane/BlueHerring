@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "piece_t.hpp"
+#include "board_t.hpp"
 
 struct move_t {
     int from_x;
@@ -76,6 +77,19 @@ vector<move_t> translate_moves(const vector<string>& move_strings) {
         moves.push_back(parse_move(move_str));
     }
     return moves;
+}
+
+bool operator==(const move_t move, const move_t other){
+    return ((move.from_x == other.from_x) && (move.from_y == other.from_y) && (move.to_x == other.to_x) && (move.to_y == other.to_y));
+}
+
+bool operator!=(const move_t move, const move_t other){
+    return not (move == other);
+}
+
+bool better(board_t board, const move_t move, const move_t other, int depth){
+    // the comparison function to order moves from best to least
+    return move_eval::move_eval(board, move, depth) > move_eval::move_eval(board, other, depth);
 }
 
 #endif
