@@ -456,12 +456,15 @@ vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
     vector<bitboard_move_t> possible_moves;
 
     Color pawn_color = (board.board_w_P & from_square) ? Color::WHITE : Color::BLACK; // "is there a white pawn on the from square?" if yes => color=white
-    int direction    = (pawn_color == Color::WHITE) ? 8 : -8;
+    int direction    = 8;
     U64 occupied     = board.get_all_pieces();
 
     // Single push
     U64 single_push = (from_square << direction) & ~occupied;
+    if (pawn_color == Color::BLACK) single_push = (from_square >> direction) & ~occupied; // for black
+
     if (single_push) {
+
         bool is_promoting = (pawn_color == Color::WHITE && y == 6) ||
                             (pawn_color == Color::BLACK && y == 1);
         vector<bitboard_move_t> push_moves = get_pawn_moves_from_possible_moves_bitboard(single_push, from_square, is_promoting);
@@ -471,6 +474,7 @@ vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
         if ((pawn_color == Color::WHITE && y == 1) ||
             (pawn_color == Color::BLACK && y == 6)) {
             U64 double_push = (single_push << direction) & ~occupied;
+            if (pawn_color == Color::BLACK) double_push = (from_square >> direction) & ~occupied; // for black
             if (double_push) {
                 vector<bitboard_move_t> d_push_moves = get_pawn_moves_from_possible_moves_bitboard(double_push, from_square, false);
                 possible_moves.insert(possible_moves.end(), d_push_moves.begin(), d_push_moves.end());
@@ -525,7 +529,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
     // Remove moves to squares with friendly pieces
     U64 potential_moves = raw_king_moves & ~board.get_all_friendly_pieces(king_color);
 
-    // Check each possible move, that it's not moving into check
+    // Check each possible move, that is not moving into check
     while (potential_moves) {
         int move_pos  = __builtin_ctzll(potential_moves); // Get index of least significant 1-bit
         U64 to_square = 1ULL << move_pos;
@@ -590,29 +594,17 @@ vector<bitboard_move_t> get_piece_moves(bitboard_t& board, int x, int y) {
     U64 square_mask = 1ULL << pos;
 
     // Get piece type and color directly from bitboards
-    if (board.board_w_P & square_mask)
+    if ((board.board_w_P | board.board_b_P) & square_mask)
         return get_pawn_moves(board, x, y);
-    if (board.board_w_R & square_mask)
+    if ((board.board_w_R | board.board_b_R) & square_mask)
         return get_rook_moves(board, x, y);
-    if (board.board_w_N & square_mask)
+    if ((board.board_w_N | board.board_b_N) & square_mask)
         return get_knight_moves(board, x, y);
-    if (board.board_w_B & square_mask)
+    if ((board.board_w_B | board.board_b_B) & square_mask)
         return get_bishop_moves(board, x, y);
-    if (board.board_w_Q & square_mask)
+    if ((board.board_w_Q | board.board_b_Q) & square_mask)
         return get_queen_moves(board, x, y);
-    if (board.board_w_K & square_mask)
-        return get_king_moves(board, x, y);
-    if (board.board_b_P & square_mask)
-        return get_pawn_moves(board, x, y);
-    if (board.board_b_R & square_mask)
-        return get_rook_moves(board, x, y);
-    if (board.board_b_N & square_mask)
-        return get_knight_moves(board, x, y);
-    if (board.board_b_B & square_mask)
-        return get_bishop_moves(board, x, y);
-    if (board.board_b_Q & square_mask)
-        return get_queen_moves(board, x, y);
-    if (board.board_b_K & square_mask)
+    if ((board.board_w_K | board.board_b_K) & square_mask)
         return get_king_moves(board, x, y);
 
     return vector<bitboard_move_t>();
@@ -659,10 +651,7 @@ vector<bitboard_move_t> generate_all_moves_for_color(bitboard_t& board, Color co
     // See https://lichess.org/analysis/fromPosition/R6R/3Q4/1Q4Q1/4Q3/2Q4Q/Q4Q2/pp1Q4/kBNN1KB1_w_-_-
 
     // Get all pieces of the given color
-    U64 pieces = color == Color::WHITE ? (board.board_w_P | board.board_w_N | board.board_w_B |
-                                          board.board_w_R | board.board_w_Q | board.board_w_K)
-                                       : (board.board_b_P | board.board_b_N | board.board_b_B |
-                                          board.board_b_R | board.board_b_Q | board.board_b_K);
+    U64 pieces = board.get_all_friendly_pieces(color);
 
     // Iterate through pieces using bit scanning
     while (pieces) {
