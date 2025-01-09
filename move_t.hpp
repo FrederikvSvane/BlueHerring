@@ -87,9 +87,4 @@ bool operator!=(const move_t move, const move_t other){
     return not (move == other);
 }
 
-bool better(board_t board, const move_t move, const move_t other, int depth){
-    // the comparison function to order moves from best to least
-    return move_eval::move_eval(board, move, depth) > move_eval::move_eval(board, other, depth);
-}
-
 #endif

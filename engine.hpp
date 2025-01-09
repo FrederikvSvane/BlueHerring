@@ -2,19 +2,22 @@
 #define engine_hpp
 
 #include <string.h>
+#include <algorithm>
 
 #include "move_t.hpp"
 #include "moves.hpp"
 #include "eval.hpp"
 #include "piece_t.hpp"
 #include "move_eval.hpp"
+#include "board_t.hpp"
 
 namespace eval{
 vector<move_t> ordered_moves(board_t board, Color color, int depth){
-  vector<move_t> possible_moves =  moves::generate_all_moves_for_color(board, color);
-      std::sort(possible_moves.begin(), possible_moves.end(), [&board, depth](const move_t& move, const move_t& other) {
-        return better(board, move, other, depth);
-    });
+  vector<move_t> moves =  moves::generate_all_moves_for_color(board, color);
+  std::sort(moves.begin(), moves.end(), [board, depth](move_t& move, move_t& other) {
+    return move_eval::move_eval(board, move, depth) > move_eval::move_eval(board, other, depth);
+  });
+  return moves;
 }
 
 

@@ -37,11 +37,13 @@ namespace move_eval{
     }
 
     bool is_check(board_t board, move_t move){
-        // FILL IN
+        Color color = board.at(move.from_x, move.from_y).piece.color;
+        return moves::is_in_check(board, color);
     }
 
     bool principal_variation(move_t move){
-        // FILL IN
+        // TODO
+        return false;
     }
 
     bool is_killer_move(move_t move, int depth){
@@ -49,11 +51,13 @@ namespace move_eval{
     }
 
     bool in_history_heuristic(move_t move){
-        //FILL IN
+        // TODO
+        return false;
     }
 
     int history_score(move_t move){
-        // FILL IN
+        // TODO
+        return false;
     }
 
     int move_eval(board_t board, move_t move, int depth){
