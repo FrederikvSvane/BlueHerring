@@ -25,12 +25,7 @@ pair<uint64_t, map<string, uint64_t>> perft(bitboard_t& board, int depth, Color 
     map<string, uint64_t> move_counts;
     vector<bitboard_move_t> moves = bitboard_moves::generate_all_moves_for_color(board, color);
 
-    string indent_str(indent * 2, ' ');
-
     for (const bitboard_move_t& move : moves) {
-        string move_str = encode_move(bitboard_to_coordinate_move(move));
-        cout << indent_str << move_str << ": ";
-
         piece_t captured_piece = bitboard_moves::make_move(board, move);
         uint64_t subtree_count = perft(board, depth - 1,
                                        single_color_only ? color : (color == Color::WHITE ? Color::BLACK : Color::WHITE),
@@ -38,9 +33,8 @@ pair<uint64_t, map<string, uint64_t>> perft(bitboard_t& board, int depth, Color 
                                      .first;
         nodes += subtree_count;
         // Convert bitboard move to coordinate move for string representation
+        string move_str       = encode_move(bitboard_to_coordinate_move(move));
         move_counts[move_str] = subtree_count;
-        cout << indent_str << "Undoing " << move_str << " (nodes: " << subtree_count << ")" << endl;
-
         bitboard_moves::undo_move(board, move, captured_piece);
     }
     return {nodes, move_counts};
@@ -53,17 +47,17 @@ void run_perft_suite() {
 
     vector<perft_test_case> test_cases = {
         // These are taken from https://www.chessprogramming.org/Perft_Results
-        // {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 4, {1, 20, 400, 8902, 197281}, false},
-        // {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -", 3, {1, 48, 2039, 97862}, false},
-        // {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -", 4, {1, 14, 191, 2812, 43238}, false},
-        // {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", 4, {1, 6, 264, 9467, 422333}, false},
-        // {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 4, {1, 44, 1486, 62379, 2103487}, false},
-        // {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", 4, {1, 46, 2079, 89890, 3894594}, false},
-        // // // These ones from http://www.rocechess.ch/perft.html
-        // {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, {1, 48, 2039, 97862, 4085603}, false},
-        // {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 5, {1, 24, 496, 9483, 182838, 3605103}, false},
-        // // And these are custom made
-        // {"8/P/8/8/8/8/8/8", 2, {1, 4, 44}, true},    // promotion
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 4, {1, 20, 400, 8902, 197281}, false},
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -", 3, {1, 48, 2039, 97862}, false},
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -", 4, {1, 14, 191, 2812, 43238}, false},
+        {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", 4, {1, 6, 264, 9467, 422333}, false},
+        {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 4, {1, 44, 1486, 62379, 2103487}, false},
+        {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", 4, {1, 46, 2079, 89890, 3894594}, false},
+        // // These ones from http://www.rocechess.ch/perft.html
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, {1, 48, 2039, 97862, 4085603}, false},
+        {"n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 5, {1, 24, 496, 9483, 182838, 3605103}, false},
+        // And these are custom made
+        {"8/P/8/8/8/8/8/8", 2, {1, 4, 44}, true},    // promotion
         {"8/8/8/8/3p4/8/4P3/8", 2, {1, 2, 4}, false} // en passant
     };
 
@@ -309,7 +303,7 @@ void test_en_passant() {
 
     move_t move{4, 3, 5, 2, PieceType::EMPTY};
     bitboard_move_t black_capture = coordinate_to_bitboard_move(move);
-    piece_t black_captured = bitboard_moves::make_move(board, black_capture);
+    piece_t black_captured        = bitboard_moves::make_move(board, black_capture);
     // board.pretty_print_board();
 
     assert(board.at(4, 3).piece.type == PieceType::EMPTY);
@@ -389,9 +383,9 @@ void test_castling() {
 
     // Test 5: Cannot castle through check
     board.initialize_board_from_fen("r3k2r/8/8/8/8/8/4b3/R3K2R w KQkq - 0 1");
-    vector<bitboard_move_t> legal_moves  = bitboard_moves::generate_all_moves_for_color(board, Color::WHITE);
-    bool found_kingside_castle  = false;
-    bool found_queenside_castle = false;
+    vector<bitboard_move_t> legal_moves = bitboard_moves::generate_all_moves_for_color(board, Color::WHITE);
+    bool found_kingside_castle          = false;
+    bool found_queenside_castle         = false;
 
     for (const auto& move : legal_moves) {
         move_t coordinate_move = bitboard_to_coordinate_move(move);
@@ -515,7 +509,7 @@ void test_check_and_checkmate() {
         board.initialize_board_from_fen(fen);
         const auto& [expected_check, expected_has_moves] = expected;
         bool actual_check                                = bitboard_moves::is_in_check(board, Color::BLACK);
-        vector<bitboard_move_t> legal_moves                       = bitboard_moves::generate_all_moves_for_color(board, Color::BLACK);
+        vector<bitboard_move_t> legal_moves              = bitboard_moves::generate_all_moves_for_color(board, Color::BLACK);
         bool has_legal_moves                             = !legal_moves.empty();
         bool is_in_checkmate                             = (!has_legal_moves && actual_check);
         assert(actual_check == expected_check);
@@ -554,6 +548,53 @@ void run_rules_test_suite() {
     run_move_test("Pawn promotion", test_pawn_promotion);
     run_move_test("Board state history", test_board_state_history);
     run_move_test("Check and checkmate", test_check_and_checkmate);
+}
+
+void run_speed_test_suite() {
+    vector<pair<string, int>> test_positions = {
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5},             // starting position
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4}, // mid game position
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 5},                            // end game position
+    };
+
+    vector<double> nps_results;
+    uint64_t total_nodes = 0;
+    auto suite_start     = chrono::high_resolution_clock::now();
+
+    for (const auto& [fen, max_depth] : test_positions) {
+        bitboard_t board;
+        board.initialize_board_from_fen(fen);
+        cout << "\nRunning speed test for position:\n";
+        board.pretty_print_board();
+        uint64_t position_nodes = 0;
+        auto position_start     = chrono::high_resolution_clock::now();
+
+        for (int depth = 1; depth <= max_depth; depth++) {
+            auto depth_start = chrono::high_resolution_clock::now();
+            auto [nodes, moves] = perft(board, depth, board.active_color, false);
+            auto depth_end = chrono::high_resolution_clock::now();
+            position_nodes += nodes;
+            total_nodes += nodes;
+            auto depth_duration = chrono::duration_cast<chrono::milliseconds>(depth_end - depth_start);
+            double depth_nps    = static_cast<double>(nodes) * 1000.0 / depth_duration.count();
+            cout << "Depth " << depth << ": "
+                 << nodes << " nodes in "
+                 << depth_duration.count() << "ms"
+                 << " (" << fixed << setprecision(0) << depth_nps << " NPS)\n";
+        }
+
+        auto position_end      = chrono::high_resolution_clock::now();
+        auto position_duration = chrono::duration_cast<chrono::milliseconds>(position_end - position_start);
+        double position_nps    = static_cast<double>(position_nodes) * 1000.0 / position_duration.count();
+        nps_results.push_back(position_nps);
+        cout << "\n------------> Average NPS: " << fixed << setprecision(0) << position_nps << "\n";
+        cout << "\n________________________________________________\n";
+    }
+
+    auto suite_end      = chrono::high_resolution_clock::now();
+    auto suite_duration = chrono::duration_cast<chrono::milliseconds>(suite_end - suite_start);
+    double overall_nps  = static_cast<double>(total_nodes) * 1000.0 / suite_duration.count();
+    cout << "\nFinal average NPS: " << fixed << setprecision(0) << overall_nps << "\n";
 }
 
 } // namespace bitboard_tests
@@ -1111,16 +1152,16 @@ void run_speed_test_suite() {
 
         for (int depth = 1; depth <= max_depth; depth++) {
             auto depth_start = chrono::high_resolution_clock::now();
-            // auto [nodes, moves] = perft(board, depth, board.active_color, false);
+            auto [nodes, moves] = perft(board, depth, board.active_color, false);
             auto depth_end = chrono::high_resolution_clock::now();
-            // position_nodes += nodes;
-            // total_nodes += nodes;
+            position_nodes += nodes;
+            total_nodes += nodes;
             auto depth_duration = chrono::duration_cast<chrono::milliseconds>(depth_end - depth_start);
-            // double depth_nps    = static_cast<double>(nodes) * 1000.0 / depth_duration.count();
-            // cout << "Depth " << depth << ": "
-            //      << nodes << " nodes in "
-            //      << depth_duration.count() << "ms"
-            //      << " (" << fixed << setprecision(0) << depth_nps << " NPS)\n";
+            double depth_nps    = static_cast<double>(nodes) * 1000.0 / depth_duration.count();
+            cout << "Depth " << depth << ": "
+                 << nodes << " nodes in "
+                 << depth_duration.count() << "ms"
+                 << " (" << fixed << setprecision(0) << depth_nps << " NPS)\n";
         }
 
         auto position_end      = chrono::high_resolution_clock::now();
