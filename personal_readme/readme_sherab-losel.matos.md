@@ -23,3 +23,8 @@
   * bishops
   * queen
   * pawns
+
+# Week 5
+- Checking whether a square is under attack using the bitboard mplementation
+- Getting legal moves for the king
+- debugging legal moves for pawns - issue with bitshifting negative numbers for ULL
