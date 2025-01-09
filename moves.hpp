@@ -201,13 +201,18 @@ piece_t make_move(bitboard_t& board, const bitboard_move_t& move) { // In the fu
 }
 
 void undo_move(bitboard_t& board, const bitboard_move_t& move, const piece_t& captured_piece) {
-    if (board.history.empty()) {
-        throw std::runtime_error("No moves to undo");
-    }
-
     // Get indices
     int from_idx = __builtin_ctzll(move.from_board);
     int to_idx   = __builtin_ctzll(move.to_board);
+
+    // Remove the move from move history
+    if (board.history.empty()) {
+        throw std::runtime_error("No moves to undo");
+    }
+    board.history.pop_back();
+
+    // Restore the previous state
+    board.restore_previous_state();
 
     // Get moving piece (from destination square since the move was already made)
     piece_t moving_piece = board.at(to_idx % 8, to_idx / 8).piece;
@@ -255,9 +260,6 @@ void undo_move(bitboard_t& board, const bitboard_move_t& move, const piece_t& ca
             *rook_board &= ~(1ULL << (rank * 8 + 3)); // Remove rook from d-file
         }
     }
-
-    board.restore_previous_state();
-    board.history.pop_back();
 }
 
 // Used for rook/queen
@@ -395,6 +397,7 @@ bool is_in_check(bitboard_t& board, Color color) {
     // Find king position
     U64 king_board = (color == Color::WHITE) ? board.board_w_K : board.board_b_K;
     int king_pos   = __builtin_ctzll(king_board);
+    // Check if he's under attack
     return is_square_under_attack(board, color, king_pos % 8, king_pos / 8);
 }
 
@@ -687,7 +690,7 @@ vector<bitboard_move_t> generate_all_moves_for_color(bitboard_t& board, Color co
     return all_moves;
 }
 
-} // namespace bit_moves
+} // namespace bitboard_moves
 
 namespace coordinate_moves {
 

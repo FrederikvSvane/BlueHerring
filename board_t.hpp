@@ -314,7 +314,7 @@ struct bitboard_state {
     bool white_queen_side_castle;
     bool black_king_side_castle;
     bool black_queen_side_castle;
-    U64 en_passant_target;
+    U64 en_passant_square;
 };
 
 struct bitboard_t {
@@ -393,7 +393,7 @@ struct bitboard_t {
         white_queen_side_castle = previous_state.white_queen_side_castle;
         black_king_side_castle  = previous_state.black_king_side_castle;
         black_queen_side_castle = previous_state.black_queen_side_castle;
-        en_passant_square       = previous_state.en_passant_target;
+        en_passant_square       = previous_state.en_passant_square;
     }
 
     // Just for debugging
@@ -425,8 +425,8 @@ struct bitboard_t {
                       << (state.black_king_side_castle ? "k" : "")
                       << (state.black_queen_side_castle ? "q" : "") << "\n";
             std::cout << "  En passant: ";
-            if (state.en_passant_target) {
-                int square = __builtin_ctzll(state.en_passant_target);
+            if (state.en_passant_square) {
+                int square = __builtin_ctzll(state.en_passant_square);
                 std::cout << char('a' + (square % 8)) << (square / 8 + 1);
             } else {
                 std::cout << "-";

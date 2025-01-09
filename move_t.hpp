@@ -35,6 +35,11 @@ struct bitboard_move_t {
     bitboard_move_t() : from_board(0), to_board(0), promotion_type(PieceType::EMPTY) {}
     bitboard_move_t(U64 from, U64 to, PieceType prom = PieceType::EMPTY)
         : from_board(from), to_board(to), promotion_type(prom) {}
+    // Constructor taking x,y coordinates (like move_t)
+    bitboard_move_t(int fx, int fy, int tx, int ty, PieceType prom = PieceType::EMPTY)
+        : from_board(1ULL << (fx + fy * 8)),
+          to_board(1ULL << (tx + ty * 8)),
+          promotion_type(prom) {}
 };
 
 static int col_to_int(char col) {
