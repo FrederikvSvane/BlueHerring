@@ -378,12 +378,12 @@ bool is_square_under_attack(bitboard_t& board, Color color, int x, int y) {
 
     if (color == Color::WHITE) {
         // Check if black pawns can attack this square
-        pawn_attacks = ((square << 7) & ~0x0101010101010101ULL) | // exclude a-file
-                       ((square << 9) & ~0x8080808080808080ULL);  // exclude h-file
+        pawn_attacks = ((square << 7) & ~0x8080808080808080ULL) | // exclude h-file
+                       ((square << 9) & ~0x0101010101010101ULL);  // exclude a-file
     } else {
         // Check if white pawns can attack this square
-        pawn_attacks = ((square >> 7) & ~0x8080808080808080ULL) | // exclude h-file
-                       ((square >> 9) & ~0x0101010101010101ULL);  // exclude a-file
+        pawn_attacks = ((square >> 7) & ~0x0101010101010101ULL) | // exclude h-file
+                       ((square >> 9) & ~0x8080808080808080ULL);  // exclude a-file
     }
 
     if (pawn_attacks & pawns) {
