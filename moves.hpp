@@ -464,7 +464,8 @@ vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
 
     // Single push
     U64 single_push = (from_square << direction) & ~occupied;
-    if (pawn_color == Color::BLACK) single_push = (from_square >> direction) & ~occupied; // for black
+    if (pawn_color == Color::BLACK)
+        single_push = (from_square >> direction) & ~occupied; // for black
 
     if (single_push) {
 
@@ -477,7 +478,8 @@ vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
         if ((pawn_color == Color::WHITE && y == 1) ||
             (pawn_color == Color::BLACK && y == 6)) {
             U64 double_push = (single_push << direction) & ~occupied;
-            if (pawn_color == Color::BLACK) double_push = (from_square >> direction) & ~occupied; // for black
+            if (pawn_color == Color::BLACK)
+                double_push = (from_square >> direction) & ~occupied; // for black
             if (double_push) {
                 vector<bitboard_move_t> d_push_moves = get_pawn_moves_from_possible_moves_bitboard(double_push, from_square, false);
                 possible_moves.insert(possible_moves.end(), d_push_moves.begin(), d_push_moves.end());
@@ -510,13 +512,21 @@ vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
         }
     }
 
-    // TODO: En passant captures
-    // We'll need to:
-    // 1. Check if en_passant_x/y are valid (using a bitboard for marking the square)
-    // 2. Verify the capturing pawn is on the correct rank
-    // 3. Generate the capture move
-    // 4. Handle the removal of the captured pawn in make_move
-    // 5. Update the board state
+    // En passant captures
+    if (board.en_passant_square) {
+        if (y == (pawn_color == Color::WHITE ? 4 : 3)) { // White pawns can do en passant from rank 5, black from rank 4
+            // Check if we can capture diagonally to the en passant square
+            U64 left_ep_attack  = (pawn_color == Color::WHITE) ? (from_square << 7) : (from_square >> 9);
+            U64 right_ep_attack = (pawn_color == Color::WHITE) ? (from_square << 9) : (from_square >> 7);
+
+            if (left_ep_attack & board.en_passant_square) {
+                possible_moves.emplace_back(from_square, board.en_passant_square);
+            }
+            if (right_ep_attack & board.en_passant_square) {
+                possible_moves.emplace_back(from_square, board.en_passant_square);
+            }
+        }
+    }
 
     return possible_moves;
 }

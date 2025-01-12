@@ -20,9 +20,9 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     // coordinate_tests::run_speed_test_suite();
     // coordinate_tests::run_perft_suite();
 
-    // bitboard_tests::run_perft_suite();
-    // bitboard_tests::run_rules_test_suite();
-    bitboard_tests::run_speed_test_suite();
+    bitboard_tests::run_rules_test_suite();
+    bitboard_tests::run_perft_suite();
+    // bitboard_tests::run_speed_test_suite();
 
     // bitboard_t bitboard;
     // bitboard.initialize_starting_board();
