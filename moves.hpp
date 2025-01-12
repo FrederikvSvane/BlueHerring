@@ -49,10 +49,7 @@ static const U64 knight_attack_table[64] = {
     0x0004020000000000ULL, 0x0008050000000000ULL, 0x00110A0000000000ULL, 0x0022140000000000ULL,
     0x0044280000000000ULL, 0x0088500000000000ULL, 0x0010A00000000000ULL, 0x0020400000000000ULL};
 
-void update_castling_rights(bitboard_t& board, const bitboard_move_t& move) {
-    int from_idx = __builtin_ctzll(move.from_board);
-    int to_idx   = __builtin_ctzll(move.to_board);
-
+void update_castling_rights(bitboard_t& board, const bitboard_move_t& move, int from_idx, int to_idx) {
     // Check if king moves
     if (board.board_w_K & move.from_board) {
         board.white_king_side_castle  = false;
@@ -74,16 +71,15 @@ void update_castling_rights(bitboard_t& board, const bitboard_move_t& move) {
         board.black_king_side_castle = false; // h8
 }
 
-void update_en_passant_square(bitboard_t& board, const bitboard_move_t& move) {
-    board.en_passant_square = 0; // Reset
+void update_en_passant_square(bitboard_t& board, const bitboard_move_t& move, int from_idx, int to_idx) {
+    board.en_passant_square = 0; // Always reset
 
-    // Check for pawn double push
-    int from_idx = __builtin_ctzll(move.from_board);
-    int to_idx   = __builtin_ctzll(move.to_board);
+    bool is_pawn               = (board.board_w_P & move.from_board) || (board.board_b_P & move.from_board);
+    bool is_two_square_move    = abs(to_idx / 8 - from_idx / 8) == 2;
+    bool same_file             = (from_idx % 8) == (to_idx % 8);
+    bool is_from_starting_rank = (from_idx / 8 == 1 || from_idx / 8 == 6);
 
-    if ((board.board_w_P & move.from_board || board.board_b_P & move.from_board) &&
-        abs(to_idx / 8 - from_idx / 8) == 2) {
-        // Set en passant square to the square between from and to
+    if (is_pawn && is_two_square_move && same_file && is_from_starting_rank) {
         int ep_idx              = (from_idx + to_idx) / 2;
         board.en_passant_square = 1ULL << ep_idx;
     }
@@ -174,7 +170,14 @@ piece_t make_move(bitboard_t& board, const bitboard_move_t& move) { // In the fu
         }
     }
 
-    // Pawn promotion
+    // Update castling rights and en passant square
+    update_castling_rights(board, move, from_idx, to_idx);
+    update_en_passant_square(board, move, from_idx, to_idx);
+
+    // Add move to history
+    board.history.push_back(move);
+
+    // Make the actual move (and handle promotion)
     if (move.promotion_type != PieceType::EMPTY) {
         // Remove pawn from source
         if (moving_piece.color == Color::WHITE) {
@@ -189,14 +192,6 @@ piece_t make_move(bitboard_t& board, const bitboard_move_t& move) { // In the fu
         // Regular move
         board.move_bit(piece_board, from_idx, to_idx);
     }
-
-    // Update castling rights and en passant square
-    update_castling_rights(board, move);
-    update_en_passant_square(board, move);
-
-    // Add move to history
-    board.history.push_back(move);
-
     return captured_piece;
 }
 
