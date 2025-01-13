@@ -5,6 +5,8 @@
 #include "move_t.hpp"
 #include "moves.hpp"
 #include "tests.hpp"
+#include "bit_engine.hpp"
+#include "chrono"
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.csv
 {
