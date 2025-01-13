@@ -7,7 +7,7 @@
 struct square_t {
     int x;
     int y;
-    bool has_moved; // Currently not handled by the bitboard
+    bool has_moved;
     piece_t piece;
 };
 

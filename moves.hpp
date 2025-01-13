@@ -9,7 +9,7 @@
 #include <stdint.h> //had to include this, otherwise didn't compile on my pc
 #include <vector>
 
-namespace bitboard_moves {
+namespace moves {
 
 // Precomputed king moves table (indexed by square position)
 static const U64 king_attack_table[64] = {
@@ -85,7 +85,7 @@ void update_en_passant_square(bitboard_t& board, const bitboard_move_t& move, in
     }
 }
 
-piece_t make_move(bitboard_t& board, const bitboard_move_t& move) { // In the future, a move_t could simply be two bits, or a bitboard with the from/to bits set to 1
+piece_t make_move(bitboard_t& board, const bitboard_move_t& move) {
     // Saving current state (pushing to the stack) before making any changes
     board.save_current_state();
 
@@ -686,6 +686,6 @@ vector<bitboard_move_t> generate_all_moves_for_color(bitboard_t& board, Color co
     return all_moves;
 }
 
-} // namespace bitboard_moves
+} // namespace moves
 
 #endif

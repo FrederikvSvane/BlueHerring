@@ -8,21 +8,21 @@
 using U64 = unsigned long long;
 
 // forward declarations
-struct move_t;
+struct coordinate_move_t;
 struct bitboard_move_t;
-move_t bitboard_to_coordinate_move(const bitboard_move_t& move);
-bitboard_move_t coordinate_to_bitboard_move(const move_t& move);
+coordinate_move_t bitboard_move_to_coordinate_move(const bitboard_move_t& move);
+bitboard_move_t coordinate_move_to_bitboard_move(const coordinate_move_t& move);
 
 // Normal, coordinate based move type
-struct move_t {
+struct coordinate_move_t {
     int from_x;
     int from_y;
     int to_x;
     int to_y;
     PieceType promotion_type;
 
-    move_t() : from_x(0), from_y(0), to_x(0), to_y(0), promotion_type(PieceType::EMPTY) {}
-    move_t(int fx, int fy, int tx, int ty, PieceType prom = PieceType::EMPTY)
+    coordinate_move_t() : from_x(0), from_y(0), to_x(0), to_y(0), promotion_type(PieceType::EMPTY) {}
+    coordinate_move_t(int fx, int fy, int tx, int ty, PieceType prom = PieceType::EMPTY)
         : from_x(fx), from_y(fy), to_x(tx), to_y(ty), promotion_type(prom) {}
 };
 
@@ -35,7 +35,7 @@ struct bitboard_move_t {
     bitboard_move_t() : from_board(0), to_board(0), promotion_type(PieceType::EMPTY) {}
     bitboard_move_t(U64 from, U64 to, PieceType prom = PieceType::EMPTY)
         : from_board(from), to_board(to), promotion_type(prom) {}
-    // Constructor taking x,y coordinates (like move_t)
+    // Constructor taking x,y coordinates (like coordinate_move_t)
     bitboard_move_t(int fx, int fy, int tx, int ty, PieceType prom = PieceType::EMPTY)
         : from_board(1ULL << (fx + fy * 8)),
           to_board(1ULL << (tx + ty * 8)),
@@ -75,10 +75,10 @@ static string piece_to_string(PieceType piece) {
     }
 }
 
-inline move_t bitboard_to_coordinate_move(const bitboard_move_t& move) {
+inline coordinate_move_t bitboard_move_to_coordinate_move(const bitboard_move_t& move) {
     int from_idx = __builtin_ctzll(move.from_board); // builtin GNU function. ctzll = count trailing zeroes long long (eg. ctz(10000) = 4)
     int to_idx   = __builtin_ctzll(move.to_board);
-    return move_t{
+    return coordinate_move_t{
         from_idx % 8,
         from_idx / 8,
         to_idx % 8,
@@ -86,13 +86,13 @@ inline move_t bitboard_to_coordinate_move(const bitboard_move_t& move) {
         move.promotion_type};
 }
 
-inline bitboard_move_t coordinate_to_bitboard_move(const move_t& move) {
+inline bitboard_move_t coordinate_move_to_bitboard_move(const coordinate_move_t& move) {
     U64 from = 1ULL << (move.from_y * 8 + move.from_x);
     U64 to   = 1ULL << (move.to_y * 8 + move.to_x);
     return bitboard_move_t(from, to, move.promotion_type);
 }
 
-inline move_t parse_move_from_string(const string& move_str) { // move_str example: "e2e4"
+inline coordinate_move_t parse_move_from_string(const string& move_str) { // move_str example: "e2e4"
     if (move_str.length() < 4) {
         throw invalid_argument("Move string too short");
     }
@@ -108,16 +108,16 @@ inline move_t parse_move_from_string(const string& move_str) { // move_str examp
 
     PieceType promotion_type = (move_str.length() > 4) ? char_to_piece(move_str[4]) : PieceType::EMPTY;
 
-    return move_t{from_x, from_y, to_x, to_y, promotion_type};
+    return coordinate_move_t{from_x, from_y, to_x, to_y, promotion_type};
 }
 
-inline string encode_move(const move_t& move) {
+inline string encode_move(const coordinate_move_t& move) {
     string move_str = int_to_col(move.from_x) + int_to_row(move.from_y) + int_to_col(move.to_x) + int_to_row(move.to_y);
     return (move.promotion_type == PieceType::EMPTY) ? move_str : move_str + piece_to_string(move.promotion_type);
 }
 
-inline vector<move_t> translate_to_coordinate_moves(const vector<string>& move_strings) {
-    vector<move_t> moves;
+inline vector<coordinate_move_t> translate_to_coordinate_moves(const vector<string>& move_strings) {
+    vector<coordinate_move_t> moves;
     moves.reserve(move_strings.size());
     for (const string& move_str : move_strings) {
         moves.push_back(parse_move_from_string(move_str));
@@ -129,7 +129,7 @@ inline vector<bitboard_move_t> translate_to_bitboard_moves(const vector<string>&
     vector<bitboard_move_t> moves;
     moves.reserve(move_strings.size());
     for (const string& move_str : move_strings) {
-        moves.push_back(coordinate_to_bitboard_move(parse_move_from_string(move_str)));
+        moves.push_back(coordinate_move_to_bitboard_move(parse_move_from_string(move_str)));
     }
     return moves;
 }

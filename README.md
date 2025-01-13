@@ -54,3 +54,7 @@ Losel (sherab-losel.matos@polytechnique.edu)
 
 Svane, Frederik (frederik.svane@polytechnique.edu)
 
+
+# Referencing
+
+The lines in our book of openings was taken from this github repository (https://github.com/lichess-org/chess-openings), specifically the ```uci``` field from ```dist/```.
