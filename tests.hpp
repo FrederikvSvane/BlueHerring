@@ -24,11 +24,11 @@ pair<uint64_t, map<string, uint64_t>> perft(bitboard_t& board, int depth, Color 
 
     uint64_t nodes = 0;
     map<string, uint64_t> move_counts;
-    vector<bitboard_move_t> moves = moves::generate_all_moves_for_color(board, color);
+    move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
 
-    for (const bitboard_move_t& move : moves) {
-        piece_t captured_piece  = moves::make_move(board, move);
-        string move_str         = encode_move(bitboard_move_to_coordinate_move(move));
+    for (int i = 0; i < possible_moves.count; i++) {
+        piece_t captured_piece  = moves::make_move(board, possible_moves.moves[i]);
+        string move_str         = encode_move(bitboard_move_to_coordinate_move(possible_moves.moves[i]));
         auto [subtree_count, _] = perft(board, depth - 1,
                                         single_color_only ? color : (color == Color::WHITE ? Color::BLACK : Color::WHITE),
                                         single_color_only,
@@ -36,7 +36,7 @@ pair<uint64_t, map<string, uint64_t>> perft(bitboard_t& board, int depth, Color 
 
         nodes += subtree_count;
         move_counts[move_str] = subtree_count;
-        moves::undo_move(board, move, captured_piece);
+        moves::undo_move(board, possible_moves.moves[i], captured_piece);
     }
     return {nodes, move_counts};
 }
@@ -130,9 +130,9 @@ void verify_piece_move(bitboard_t& board, const bitboard_move_t& bitboard_move,
                        PieceType expected_capture = PieceType::EMPTY,
                        Color capture_color        = Color::WHITE) {
 
-    bitboard_t initial_board = board;
-    piece_t captured         = moves::make_move(board, bitboard_move);
-    coordinate_move_t coordinate_move   = bitboard_move_to_coordinate_move(bitboard_move);
+    bitboard_t initial_board          = board;
+    piece_t captured                  = moves::make_move(board, bitboard_move);
+    coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(bitboard_move);
 
     // Verify piece moved correctly
     assert(board.at(coordinate_move.from_x, coordinate_move.from_y).piece.type == PieceType::EMPTY);
@@ -153,18 +153,18 @@ void test_piece_movement_and_capture() {
     // Test 1: Pawn moves and captures
     bitboard_t board;
     board.initialize_board_from_fen("8/8/8/3p4/4P3/8/8/8");
-    vector<bitboard_move_t> pawn_moves = moves::get_piece_moves(board, 4, 3);
-    assert(pawn_moves.size() == 2); // either straight up or capture
+    move_list_t pawn_moves = moves::get_piece_moves(board, 4, 3);
+    assert(pawn_moves.count == 2); // either straight up or capture
     bool found_advance = false, found_capture = false;
 
-    for (const auto& move : pawn_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < pawn_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(pawn_moves.moves[i]);
         if (coordinate_move.to_x == 4 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::PAWN, Color::WHITE);
+            verify_piece_move(board, pawn_moves.moves[i], PieceType::PAWN, Color::WHITE);
             found_advance = true;
         }
         if (coordinate_move.to_x == 3 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::PAWN, Color::WHITE,
+            verify_piece_move(board, pawn_moves.moves[i], PieceType::PAWN, Color::WHITE,
                               PieceType::PAWN, Color::BLACK);
             found_capture = true;
         }
@@ -173,19 +173,19 @@ void test_piece_movement_and_capture() {
 
     // Test 2: Knight moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/5N2/8/8/8");
-    vector<bitboard_move_t> knight_moves = moves::get_piece_moves(board, 5, 3);
-    assert(knight_moves.size() == 8);
+    move_list_t knight_moves = moves::get_piece_moves(board, 5, 3);
+    assert(knight_moves.count == 8);
     bool found_knight_move = false, found_knight_capture = false;
 
-    for (const auto& move : knight_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < knight_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(knight_moves.moves[i]);
 
         if (coordinate_move.to_x == 6 && coordinate_move.to_y == 1) {
-            verify_piece_move(board, move, PieceType::KNIGHT, Color::WHITE);
+            verify_piece_move(board, knight_moves.moves[i], PieceType::KNIGHT, Color::WHITE);
             found_knight_move = true;
         }
         if (coordinate_move.to_x == 3 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::KNIGHT, Color::WHITE,
+            verify_piece_move(board, knight_moves.moves[i], PieceType::KNIGHT, Color::WHITE,
                               PieceType::PAWN, Color::BLACK);
             found_knight_capture = true;
         }
@@ -194,19 +194,19 @@ void test_piece_movement_and_capture() {
 
     // Test 3: Bishop moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/4B3/8/8/8");
-    vector<bitboard_move_t> bishop_moves = moves::get_piece_moves(board, 4, 3);
-    assert(bishop_moves.size() == 10);
+    move_list_t bishop_moves = moves::get_piece_moves(board, 4, 3);
+    assert(bishop_moves.count == 10);
     bool found_bishop_move = false, found_bishop_capture = false;
 
-    for (const auto& move : bishop_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < bishop_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(bishop_moves.moves[i]);
 
         if (coordinate_move.to_x == 6 && coordinate_move.to_y == 5) {
-            verify_piece_move(board, move, PieceType::BISHOP, Color::WHITE);
+            verify_piece_move(board, bishop_moves.moves[i], PieceType::BISHOP, Color::WHITE);
             found_bishop_move = true;
         }
         if (coordinate_move.to_x == 3 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::BISHOP, Color::WHITE,
+            verify_piece_move(board, bishop_moves.moves[i], PieceType::BISHOP, Color::WHITE,
                               PieceType::PAWN, Color::BLACK);
             found_bishop_capture = true;
         }
@@ -215,19 +215,19 @@ void test_piece_movement_and_capture() {
 
     // Test 4: Rook moves and captures
     board.initialize_board_from_fen("8/8/8/3pR3/8/8/8/8");
-    vector<bitboard_move_t> rook_moves = moves::get_piece_moves(board, 4, 4);
-    assert(rook_moves.size() == 11);
+    move_list_t rook_moves = moves::get_piece_moves(board, 4, 4);
+    assert(rook_moves.count == 11);
     bool found_rook_move = false, found_rook_capture = false;
 
-    for (const auto& move : rook_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < rook_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(rook_moves.moves[i]);
 
         if (coordinate_move.to_x == 4 && coordinate_move.to_y == 7) {
-            verify_piece_move(board, move, PieceType::ROOK, Color::WHITE);
+            verify_piece_move(board, rook_moves.moves[i], PieceType::ROOK, Color::WHITE);
             found_rook_move = true;
         }
         if (coordinate_move.to_x == 3 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::ROOK, Color::WHITE,
+            verify_piece_move(board, rook_moves.moves[i], PieceType::ROOK, Color::WHITE,
                               PieceType::PAWN, Color::BLACK);
             found_rook_capture = true;
         }
@@ -236,23 +236,23 @@ void test_piece_movement_and_capture() {
 
     // Test 5: Queen moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/4Q3/8/8/8");
-    vector<bitboard_move_t> queen_moves = moves::get_piece_moves(board, 4, 3);
-    assert(queen_moves.size() == 24);
+    move_list_t queen_moves = moves::get_piece_moves(board, 4, 3);
+    assert(queen_moves.count == 24);
     bool found_queen_straight = false, found_queen_diagonal = false, found_queen_capture = false;
 
-    for (const auto& move : queen_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < queen_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(queen_moves.moves[i]);
 
         if (coordinate_move.to_x == 4 && coordinate_move.to_y == 7) {
-            verify_piece_move(board, move, PieceType::QUEEN, Color::WHITE);
+            verify_piece_move(board, queen_moves.moves[i], PieceType::QUEEN, Color::WHITE);
             found_queen_straight = true;
         }
         if (coordinate_move.to_x == 6 && coordinate_move.to_y == 5) {
-            verify_piece_move(board, move, PieceType::QUEEN, Color::WHITE);
+            verify_piece_move(board, queen_moves.moves[i], PieceType::QUEEN, Color::WHITE);
             found_queen_diagonal = true;
         }
         if (coordinate_move.to_x == 3 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::QUEEN, Color::WHITE,
+            verify_piece_move(board, queen_moves.moves[i], PieceType::QUEEN, Color::WHITE,
                               PieceType::PAWN, Color::BLACK);
             found_queen_capture = true;
         }
@@ -261,54 +261,24 @@ void test_piece_movement_and_capture() {
 
     // Test 6: King moves and captures
     board.initialize_board_from_fen("8/8/8/3p4/4K3/8/8/8");
-    vector<bitboard_move_t> king_moves = moves::get_piece_moves(board, 4, 3);
-    assert(king_moves.size() == 8);
+    move_list_t king_moves = moves::get_piece_moves(board, 4, 3);
+    assert(king_moves.count == 8);
     bool found_king_move = false, found_king_capture = false;
 
-    for (const auto& move : king_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < king_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(king_moves.moves[i]);
 
         if (coordinate_move.to_x == 4 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::KING, Color::WHITE);
+            verify_piece_move(board, king_moves.moves[i], PieceType::KING, Color::WHITE);
             found_king_move = true;
         }
         if (coordinate_move.to_x == 3 && coordinate_move.to_y == 4) {
-            verify_piece_move(board, move, PieceType::KING, Color::WHITE,
+            verify_piece_move(board, king_moves.moves[i], PieceType::KING, Color::WHITE,
                               PieceType::PAWN, Color::BLACK);
             found_king_capture = true;
         }
     }
     assert(found_king_move && found_king_capture);
-}
-
-void custom_scenario_test_1() {
-    bitboard_t board;
-
-    board.initialize_board_from_fen("7p/7p/7p/K6p/7p/7p/7p/7p w - - 0 1");
-    board.pretty_print_board();
-    // board.print_bitboard(board.board_b_P);
-    if (moves::is_in_check(board, Color::WHITE)) {
-        cout << "white is currently in check" << endl;
-    }
-    vector<bitboard_move_t> all_pawn_moves;
-    for (int i = 0; i < 8; i++) {
-        vector<bitboard_move_t> current_pawn_moves = moves::get_pawn_moves(board, 7, i);
-        // for(auto& move : current_pawn_moves){
-        //     cout << encode_move(bitboard_move_to_coordinate_move(move)) << endl;
-        // }
-        all_pawn_moves.insert(all_pawn_moves.end(), current_pawn_moves.begin(), current_pawn_moves.end());
-    }
-    for (auto& move : all_pawn_moves) {
-        coordinate_move_t cmove = bitboard_move_to_coordinate_move(move);
-        cout << "pawn at square (" << encode_move(cmove) << endl;
-        // if(cmove.to_x == 3 && cmove.to_y == 0){
-        //     cout << "motherfucker piece is at " << cmove.from_x << ", " << cmove.from_y << endl;
-        // }
-    }
-    assert(!moves::is_in_check(board, Color::WHITE));
-
-    board.initialize_board_from_fen("7P/7P/7P/k6P/7P/7P/7P/7P w - - 0 1");
-    board.pretty_print_board();
 }
 
 void test_en_passant() {
@@ -319,10 +289,10 @@ void test_en_passant() {
 
     bitboard_t initial_board = board;
     bitboard_move_t white_capture{};
-    vector<bitboard_move_t> possible_moves = moves::get_pawn_moves(board, 4, 4);
-    for (auto& move : possible_moves) {
-        if (encode_move(bitboard_move_to_coordinate_move(move)) == "e5d6") {
-            white_capture = move;
+    move_list_t possible_moves = moves::get_pawn_moves(board, 4, 4);
+    for (int i = 0; i < possible_moves.count; i++) {
+        if (encode_move(bitboard_move_to_coordinate_move(possible_moves.moves[i])) == "e5d6") {
+            white_capture = possible_moves.moves[i];
         };
     }
     assert(encode_move(bitboard_move_to_coordinate_move(white_capture)) == "e5d6");
@@ -426,12 +396,12 @@ void test_castling() {
 
     // Test 5: Cannot castle through check
     board.initialize_board_from_fen("r3k2r/8/8/8/8/8/4b3/R3K2R w KQkq - 0 1");
-    vector<bitboard_move_t> legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
-    bool found_kingside_castle          = false;
-    bool found_queenside_castle         = false;
+    move_list_t legal_moves     = moves::generate_all_moves_for_color(board, Color::WHITE);
+    bool found_kingside_castle  = false;
+    bool found_queenside_castle = false;
 
-    for (const auto& move : legal_moves) {
-        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(move);
+    for (int i = 0; i < legal_moves.count; i++) {
+        coordinate_move_t coordinate_move = bitboard_move_to_coordinate_move(legal_moves.moves[i]);
         if (coordinate_move.from_x == 4 && coordinate_move.from_y == 0) { // King's starting position
             if (coordinate_move.to_x == 6 && coordinate_move.to_y == 0)
                 found_kingside_castle = true; // Kingside castle
@@ -474,27 +444,26 @@ void test_pawn_promotion() {
 void test_board_state_history() {
     bitboard_t board;
     board.initialize_board_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-    vector<bitboard_move_t> moves = {
-        bitboard_move_t{4, 1, 4, 3, PieceType::EMPTY}, // e2e4
-        bitboard_move_t{4, 6, 4, 4, PieceType::EMPTY}, // e7e5
-        bitboard_move_t{5, 0, 2, 3, PieceType::EMPTY}  // f1c4
-    };
+    move_list_t moves;
+    moves.add(bitboard_move_t{4, 1, 4, 3, PieceType::EMPTY}); // e2e4
+    moves.add(bitboard_move_t{4, 6, 4, 4, PieceType::EMPTY}); // e7e5
+    moves.add(bitboard_move_t{5, 0, 2, 3, PieceType::EMPTY}); // f1c4
     vector<piece_t> captured_pieces;
     vector<bitboard_state> states;
 
     // Make multiple moves and save states
-    for (const auto& move : moves) {
+    for (int i = 0; i < moves.count; i++) {
         states.push_back({board.white_king_side_castle,
                           board.white_queen_side_castle,
                           board.black_king_side_castle,
                           board.black_queen_side_castle,
                           board.en_passant_square});
-        captured_pieces.push_back(moves::make_move(board, move));
+        captured_pieces.push_back(moves::make_move(board, moves.moves[i]));
     }
 
     // Undo moves in reverse order
-    for (int i = moves.size() - 1; i >= 0; i--) {
-        moves::undo_move(board, moves[i], captured_pieces[i]);
+    for (int i = moves.count - 1; i >= 0; i--) {
+        moves::undo_move(board, moves.moves[i], captured_pieces[i]);
         assert(board.white_king_side_castle == states[i].white_king_side_castle);
         assert(board.white_queen_side_castle == states[i].white_queen_side_castle);
         assert(board.black_king_side_castle == states[i].black_king_side_castle);
@@ -552,8 +521,8 @@ void test_check_and_checkmate() {
         board.initialize_board_from_fen(fen);
         const auto& [expected_check, expected_has_moves] = expected;
         bool actual_check                                = moves::is_in_check(board, Color::BLACK);
-        vector<bitboard_move_t> legal_moves              = moves::generate_all_moves_for_color(board, Color::BLACK);
-        bool has_legal_moves                             = !legal_moves.empty();
+        move_list_t legal_moves                          = moves::generate_all_moves_for_color(board, Color::BLACK);
+        bool has_legal_moves                             = legal_moves.count != 0;
         bool is_in_checkmate                             = (!has_legal_moves && actual_check);
         assert(actual_check == expected_check);
         assert(has_legal_moves == expected_has_moves);
@@ -561,12 +530,12 @@ void test_check_and_checkmate() {
 
     // Test 4: Move generation under check
     board.initialize_board_from_fen("k7/8/8/8/8/3b4/8/4K3 w - - 0 1");
-    vector<bitboard_move_t> legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
+    move_list_t legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
 
-    for (const auto& move : legal_moves) {
-        piece_t captured    = moves::make_move(board, move);
+    for (int i = 0; i < legal_moves.count; i++) {
+        piece_t captured    = moves::make_move(board, legal_moves.moves[i]);
         bool still_in_check = moves::is_in_check(board, Color::WHITE);
-        moves::undo_move(board, move, captured);
+        moves::undo_move(board, legal_moves.moves[i], captured);
         assert(!still_in_check);
     }
 
@@ -576,7 +545,7 @@ void test_check_and_checkmate() {
     captured = moves::make_move(board, promotion_capture);
     assert(moves::is_in_check(board, Color::WHITE));
     legal_moves = moves::generate_all_moves_for_color(board, Color::WHITE);
-    assert(legal_moves.size() == 7);
+    assert(legal_moves.count == 7);
     moves::undo_move(board, promotion_capture, captured);
     assert(!moves::is_in_check(board, Color::WHITE));
 }
@@ -591,7 +560,6 @@ void run_rules_test_suite() {
     run_move_test("Pawn promotion", test_pawn_promotion);
     run_move_test("Board state history", test_board_state_history);
     run_move_test("Check and checkmate", test_check_and_checkmate);
-    custom_scenario_test_1();
 }
 
 void run_speed_test_suite() {
@@ -676,8 +644,6 @@ void test_evaluation() {
     board.initialize_board_from_fen("8/8/8/8/8/8/p7/8");
     int bps = eval::evaluate_position(board);
     assert(bps == -150);
-
-    
 
     // Test 2: Color symmetry
     board.initialize_board_from_fen("8/8/8/4P3/8/8/8/8");

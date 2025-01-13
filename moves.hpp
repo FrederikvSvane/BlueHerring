@@ -49,6 +49,84 @@ static const U64 knight_attack_table[64] = {
     0x0004020000000000ULL, 0x0008050000000000ULL, 0x00110A0000000000ULL, 0x0022140000000000ULL,
     0x0044280000000000ULL, 0x0088500000000000ULL, 0x0010A00000000000ULL, 0x0020400000000000ULL};
 
+// At compile time, these tables store all possible pawn attacks for each square
+// 1 bits represent squares that can be attacked from the pawn's position
+static const U64 PAWN_ATTACKS_WHITE[64] = {
+    0x0000000000000200ULL, 0x0000000000000500ULL, 0x0000000000000A00ULL, 0x0000000000001400ULL,
+    0x0000000000002800ULL, 0x0000000000005000ULL, 0x000000000000A000ULL, 0x0000000000004000ULL,
+    0x0000000000020000ULL, 0x0000000000050000ULL, 0x00000000000A0000ULL, 0x0000000000140000ULL,
+    0x0000000000280000ULL, 0x0000000000500000ULL, 0x0000000000A00000ULL, 0x0000000000400000ULL,
+    0x0000000002000000ULL, 0x0000000005000000ULL, 0x000000000A000000ULL, 0x0000000014000000ULL,
+    0x0000000028000000ULL, 0x0000000050000000ULL, 0x00000000A0000000ULL, 0x0000000040000000ULL,
+    0x0000000200000000ULL, 0x0000000500000000ULL, 0x0000000A00000000ULL, 0x0000001400000000ULL,
+    0x0000002800000000ULL, 0x0000005000000000ULL, 0x000000A000000000ULL, 0x0000004000000000ULL,
+    0x0000020000000000ULL, 0x0000050000000000ULL, 0x00000A0000000000ULL, 0x0000140000000000ULL,
+    0x0000280000000000ULL, 0x0000500000000000ULL, 0x0000A00000000000ULL, 0x0000400000000000ULL,
+    0x0002000000000000ULL, 0x0005000000000000ULL, 0x000A000000000000ULL, 0x0014000000000000ULL,
+    0x0028000000000000ULL, 0x0050000000000000ULL, 0x00A0000000000000ULL, 0x0040000000000000ULL,
+    0x0200000000000000ULL, 0x0500000000000000ULL, 0x0A00000000000000ULL, 0x1400000000000000ULL,
+    0x2800000000000000ULL, 0x5000000000000000ULL, 0xA000000000000000ULL, 0x4000000000000000ULL,
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL
+};
+
+static const U64 PAWN_ATTACKS_BLACK[64] = {
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+    0x0000000000000002ULL, 0x0000000000000005ULL, 0x000000000000000AULL, 0x0000000000000014ULL,
+    0x0000000000000028ULL, 0x0000000000000050ULL, 0x00000000000000A0ULL, 0x0000000000000040ULL,
+    0x0000000000000200ULL, 0x0000000000000500ULL, 0x0000000000000A00ULL, 0x0000000000001400ULL,
+    0x0000000000002800ULL, 0x0000000000005000ULL, 0x000000000000A000ULL, 0x0000000000004000ULL,
+    0x0000000000020000ULL, 0x0000000000050000ULL, 0x00000000000A0000ULL, 0x0000000000140000ULL,
+    0x0000000000280000ULL, 0x0000000000500000ULL, 0x0000000000A00000ULL, 0x0000000000400000ULL,
+    0x0000000002000000ULL, 0x0000000005000000ULL, 0x000000000A000000ULL, 0x0000000014000000ULL,
+    0x0000000028000000ULL, 0x0000000050000000ULL, 0x00000000A0000000ULL, 0x0000000040000000ULL,
+    0x0000000200000000ULL, 0x0000000500000000ULL, 0x0000000A00000000ULL, 0x0000001400000000ULL,
+    0x0000002800000000ULL, 0x0000005000000000ULL, 0x000000A000000000ULL, 0x0000004000000000ULL,
+    0x0000020000000000ULL, 0x0000050000000000ULL, 0x00000A0000000000ULL, 0x0000140000000000ULL,
+    0x0000280000000000ULL, 0x0000500000000000ULL, 0x0000A00000000000ULL, 0x0000400000000000ULL,
+    0x0002000000000000ULL, 0x0005000000000000ULL, 0x000A000000000000ULL, 0x0014000000000000ULL,
+    0x0028000000000000ULL, 0x0050000000000000ULL, 0x00A0000000000000ULL, 0x0040000000000000ULL
+};
+
+static const U64 PAWN_PUSH_WHITE[64] = {
+    0x0000000000000100ULL, 0x0000000000000200ULL, 0x0000000000000400ULL, 0x0000000000000800ULL,
+    0x0000000000001000ULL, 0x0000000000002000ULL, 0x0000000000004000ULL, 0x0000000000008000ULL,
+    0x0000000000010000ULL, 0x0000000000020000ULL, 0x0000000000040000ULL, 0x0000000000080000ULL,
+    0x0000000000100000ULL, 0x0000000000200000ULL, 0x0000000000400000ULL, 0x0000000000800000ULL,
+    0x0000000001000000ULL, 0x0000000002000000ULL, 0x0000000004000000ULL, 0x0000000008000000ULL,
+    0x0000000010000000ULL, 0x0000000020000000ULL, 0x0000000040000000ULL, 0x0000000080000000ULL,
+    0x0000000100000000ULL, 0x0000000200000000ULL, 0x0000000400000000ULL, 0x0000000800000000ULL,
+    0x0000001000000000ULL, 0x0000002000000000ULL, 0x0000004000000000ULL, 0x0000008000000000ULL,
+    0x0000010000000000ULL, 0x0000020000000000ULL, 0x0000040000000000ULL, 0x0000080000000000ULL,
+    0x0000100000000000ULL, 0x0000200000000000ULL, 0x0000400000000000ULL, 0x0000800000000000ULL,
+    0x0001000000000000ULL, 0x0002000000000000ULL, 0x0004000000000000ULL, 0x0008000000000000ULL,
+    0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL,
+    0x0100000000000000ULL, 0x0200000000000000ULL, 0x0400000000000000ULL, 0x0800000000000000ULL,
+    0x1000000000000000ULL, 0x2000000000000000ULL, 0x4000000000000000ULL, 0x8000000000000000ULL,
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL
+};
+
+static const U64 PAWN_PUSH_BLACK[64] = {
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+    0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000004ULL, 0x0000000000000008ULL,
+    0x0000000000000010ULL, 0x0000000000000020ULL, 0x0000000000000040ULL, 0x0000000000000080ULL,
+    0x0000000000000100ULL, 0x0000000000000200ULL, 0x0000000000000400ULL, 0x0000000000000800ULL,
+    0x0000000000001000ULL, 0x0000000000002000ULL, 0x0000000000004000ULL, 0x0000000000008000ULL,
+    0x0000000000010000ULL, 0x0000000000020000ULL, 0x0000000000040000ULL, 0x0000000000080000ULL,
+    0x0000000000100000ULL, 0x0000000000200000ULL, 0x0000000000400000ULL, 0x0000000000800000ULL,
+    0x0000000001000000ULL, 0x0000000002000000ULL, 0x0000000004000000ULL, 0x0000000008000000ULL,
+    0x0000000010000000ULL, 0x0000000020000000ULL, 0x0000000040000000ULL, 0x0000000080000000ULL,
+    0x0000000100000000ULL, 0x0000000200000000ULL, 0x0000000400000000ULL, 0x0000000800000000ULL,
+    0x0000001000000000ULL, 0x0000002000000000ULL, 0x0000004000000000ULL, 0x0000008000000000ULL,
+    0x0000010000000000ULL, 0x0000020000000000ULL, 0x0000040000000000ULL, 0x0000080000000000ULL,
+    0x0000100000000000ULL, 0x0000200000000000ULL, 0x0000400000000000ULL, 0x0000800000000000ULL,
+    0x0001000000000000ULL, 0x0002000000000000ULL, 0x0004000000000000ULL, 0x0008000000000000ULL,
+    0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL
+};
+
 void update_castling_rights(bitboard_t& board, const bitboard_move_t& move, int from_idx, int to_idx) {
     // Check if king moves
     if (board.board_w_K & move.from_board) {
@@ -396,7 +474,7 @@ bool is_in_check(bitboard_t& board, Color color) {
     return is_square_under_attack(board, color, king_pos % 8, king_pos / 8);
 }
 
-vector<bitboard_move_t> get_knight_moves(bitboard_t& board, int x, int y) {
+move_list_t get_knight_moves(bitboard_t& board, int x, int y) {
     int pos            = y * 8 + x;
     U64 from_square    = board.single_bitmask(pos);
     U64 possible_moves = knight_attack_table[pos];                                      // get the possible moves table for the given square
@@ -405,7 +483,7 @@ vector<bitboard_move_t> get_knight_moves(bitboard_t& board, int x, int y) {
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
 
-vector<bitboard_move_t> get_rook_moves(bitboard_t& board, int x, int y) {
+move_list_t get_rook_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 from_square = board.single_bitmask(pos);
 
@@ -418,7 +496,7 @@ vector<bitboard_move_t> get_rook_moves(bitboard_t& board, int x, int y) {
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
 
-vector<bitboard_move_t> get_bishop_moves(bitboard_t& board, int x, int y) {
+move_list_t get_bishop_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 from_square = board.single_bitmask(pos);
 
@@ -433,7 +511,7 @@ vector<bitboard_move_t> get_bishop_moves(bitboard_t& board, int x, int y) {
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
 
-vector<bitboard_move_t> get_queen_moves(bitboard_t& board, int x, int y) {
+move_list_t get_queen_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 from_square = board.single_bitmask(pos);
 
@@ -448,90 +526,85 @@ vector<bitboard_move_t> get_queen_moves(bitboard_t& board, int x, int y) {
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
 
-vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
-    int pos         = y * 8 + x;
-    U64 from_square = board.single_bitmask(pos);
-    vector<bitboard_move_t> possible_moves;
-
-    Color pawn_color = (board.board_w_P & from_square) ? Color::WHITE : Color::BLACK; // "is there a white pawn on the from square?" if yes => color=white
-    int direction    = 8;
-    U64 occupied     = board.get_all_pieces();
-
-    // Single push
-    U64 single_push = (from_square << direction) & ~occupied;
-    if (pawn_color == Color::BLACK)
-        single_push = (from_square >> direction) & ~occupied; // for black
-
+inline move_list_t get_pawn_moves(bitboard_t& board, int x, int y) {
+    const int pos = y * 8 + x;
+    const U64 from_square = 1ULL << pos;
+    move_list_t moves;
+    
+    // Determine pawn color and relevant constants
+    const bool is_white = board.board_w_P & from_square;
+    const U64 occupied = board.get_all_pieces();
+    const U64 enemy_pieces = board.get_all_friendly_pieces(is_white ? Color::BLACK : Color::WHITE);
+    
+    // Get attacks using lookup tables
+    const U64 attacks = is_white ? PAWN_ATTACKS_WHITE[pos] : PAWN_ATTACKS_BLACK[pos];
+    const U64 valid_captures = attacks & enemy_pieces;
+    
+    // Handle captures
+    if (valid_captures) {
+        const bool is_promoting = (is_white && y == 6) || (!is_white && y == 1);
+        U64 captures = valid_captures;
+        while (captures) {
+            const int to_idx = __builtin_ctzll(captures);
+            const U64 to_square = 1ULL << to_idx;
+            
+            if (is_promoting) {
+                // Add all promotion captures directly
+                moves.add({from_square, to_square, PieceType::QUEEN});
+                moves.add({from_square, to_square, PieceType::ROOK});
+                moves.add({from_square, to_square, PieceType::BISHOP});
+                moves.add({from_square, to_square, PieceType::KNIGHT});
+            } else {
+                moves.add({from_square, to_square});
+            }
+            captures &= captures - 1;  // Clear LSB
+        }
+    }
+    
+    // Handle pushes
+    const U64 push_pattern = is_white ? PAWN_PUSH_WHITE[pos] : PAWN_PUSH_BLACK[pos];
+    U64 single_push = push_pattern & ~occupied;
+    
     if (single_push) {
-
-        bool is_promoting = (pawn_color == Color::WHITE && y == 6) ||
-                            (pawn_color == Color::BLACK && y == 1);
-        vector<bitboard_move_t> push_moves = get_pawn_moves_from_possible_moves_bitboard(single_push, from_square, is_promoting);
-        possible_moves.insert(possible_moves.end(), push_moves.begin(), push_moves.end());
-
-        // Double push (only if single push is availible and pawn havent moved yet)
-        if ((pawn_color == Color::WHITE && y == 1) ||
-            (pawn_color == Color::BLACK && y == 6)) {
-            U64 double_push = (single_push << direction) & ~occupied;
-
-            if (pawn_color == Color::BLACK)
-                double_push = (single_push >> direction) & ~occupied; // for black
-
-            if (double_push) {
-                vector<bitboard_move_t> d_push_moves = get_pawn_moves_from_possible_moves_bitboard(double_push, from_square, false);
-                possible_moves.insert(possible_moves.end(), d_push_moves.begin(), d_push_moves.end());
+        const bool is_promoting = (is_white && y == 6) || (!is_white && y == 1);
+        if (is_promoting) {
+            // Add all promotion pushes directly
+            moves.add({from_square, single_push, PieceType::QUEEN});
+            moves.add({from_square, single_push, PieceType::ROOK});
+            moves.add({from_square, single_push, PieceType::BISHOP});
+            moves.add({from_square, single_push, PieceType::KNIGHT});
+        } else {
+            moves.add({from_square, single_push});
+            
+            // Double push logic
+            if ((is_white && y == 1) || (!is_white && y == 6)) {
+                const U64 double_push = is_white ? 
+                    (single_push << 8) & ~occupied :
+                    (single_push >> 8) & ~occupied;
+                    
+                if (double_push) {
+                    moves.add({from_square, double_push});
+                }
             }
         }
     }
-
-    // Captures
-    U64 enemy_pieces = board.get_all_friendly_pieces(!pawn_color);
-
-    if (x > 0) { // Left capture
-        U64 left_capture  = (pawn_color == Color::WHITE) ? (from_square << 7) : (from_square >> 9);
-        U64 valid_capture = left_capture & enemy_pieces;
-        if (valid_capture) {
-            bool is_promoting = (pawn_color == Color::WHITE && y == 6) ||
-                                (pawn_color == Color::BLACK && y == 1);
-            vector<bitboard_move_t> capture_moves = get_pawn_moves_from_possible_moves_bitboard(valid_capture, from_square, is_promoting);
-            possible_moves.insert(possible_moves.end(), capture_moves.begin(), capture_moves.end());
+    
+    // Handle en passant
+    if (board.en_passant_square && (y == (is_white ? 4 : 3))) {
+        const U64 ep_attacks = attacks & board.en_passant_square;
+        if (ep_attacks) {
+            moves.add({from_square, board.en_passant_square});
         }
     }
-
-    if (x < 7) { // Right capture
-        U64 right_capture = (pawn_color == Color::WHITE) ? (from_square << 9) : (from_square >> 7);
-        U64 valid_capture = right_capture & enemy_pieces;
-        if (valid_capture) {
-            bool is_promoting = (pawn_color == Color::WHITE && y == 6) ||
-                                (pawn_color == Color::BLACK && y == 1);
-            vector<bitboard_move_t> capture_moves = get_pawn_moves_from_possible_moves_bitboard(valid_capture, from_square, is_promoting);
-            possible_moves.insert(possible_moves.end(), capture_moves.begin(), capture_moves.end());
-        }
-    }
-
-    // En passant captures
-    if (board.en_passant_square) {
-        if (y == (pawn_color == Color::WHITE ? 4 : 3)) { // White pawns can do en passant from rank 5, black from rank 4
-            // Check if we can capture diagonally to the en passant square
-            U64 left_ep_attack  = (pawn_color == Color::WHITE) ? (from_square << 7) : (from_square >> 9);
-            U64 right_ep_attack = (pawn_color == Color::WHITE) ? (from_square << 9) : (from_square >> 7);
-
-            if (left_ep_attack & board.en_passant_square) {
-                possible_moves.emplace_back(from_square, board.en_passant_square);
-            }
-            if (right_ep_attack & board.en_passant_square) {
-                possible_moves.emplace_back(from_square, board.en_passant_square);
-            }
-        }
-    }
-
-    return possible_moves;
+    
+    return moves;
 }
 
-vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
+
+move_list_t get_king_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 from_square = board.single_bitmask(pos);
-    vector<bitboard_move_t> possible_moves;
+    move_list_t possible_moves;
     U64 raw_king_moves = king_attack_table[pos];
     Color king_color   = (board.board_w_K & from_square) ? Color::WHITE : Color::BLACK; // "is there a white king on the from_square?" if yes => color=white
     Color enemy_color  = !king_color;
@@ -547,7 +620,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
 
         // If square is not under attack, add it as a valid move
         if (!is_square_under_attack(board, king_color, move_pos % 8, move_pos / 8)) {
-            possible_moves.emplace_back(bitboard_move_t(from_square, to_square));
+            possible_moves.add(bitboard_move_t(from_square, to_square));
         }
     }
 
@@ -560,7 +633,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
                 if (!(board.get_all_pieces() & (f1 | g1)) &&
                     !is_square_under_attack(board, king_color, 5, 0) &&
                     !is_square_under_attack(board, king_color, 6, 0)) {
-                    possible_moves.emplace_back(bitboard_move_t(from_square, g1));
+                    possible_moves.add(bitboard_move_t(from_square, g1));
                 }
             }
             if (board.white_queen_side_castle) {
@@ -570,7 +643,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
                 if (!(board.get_all_pieces() & (b1 | c1 | d1)) &&
                     !is_square_under_attack(board, king_color, 2, 0) &&
                     !is_square_under_attack(board, king_color, 3, 0)) {
-                    possible_moves.emplace_back(bitboard_move_t(from_square, c1));
+                    possible_moves.add(bitboard_move_t(from_square, c1));
                 }
             }
         } else {
@@ -580,7 +653,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
                 if (!(board.get_all_pieces() & (f8 | g8)) &&
                     !is_square_under_attack(board, king_color, 5, 7) &&
                     !is_square_under_attack(board, king_color, 6, 7)) {
-                    possible_moves.emplace_back(bitboard_move_t(from_square, g8));
+                    possible_moves.add(bitboard_move_t(from_square, g8));
                 }
             }
             if (board.black_queen_side_castle) {
@@ -590,7 +663,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
                 if (!(board.get_all_pieces() & (b8 | c8 | d8)) &&
                     !is_square_under_attack(board, king_color, 2, 7) &&
                     !is_square_under_attack(board, king_color, 3, 7)) {
-                    possible_moves.emplace_back(bitboard_move_t(from_square, c8));
+                    possible_moves.add(bitboard_move_t(from_square, c8));
                 }
             }
         }
@@ -599,7 +672,7 @@ vector<bitboard_move_t> get_king_moves(bitboard_t& board, int x, int y) {
     return possible_moves;
 }
 
-vector<bitboard_move_t> get_piece_moves(bitboard_t& board, int x, int y) {
+move_list_t get_piece_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 square_mask = 1ULL << pos;
 
@@ -617,14 +690,11 @@ vector<bitboard_move_t> get_piece_moves(bitboard_t& board, int x, int y) {
     if ((board.board_w_K | board.board_b_K) & square_mask)
         return get_king_moves(board, x, y);
 
-    return vector<bitboard_move_t>();
+    return move_list_t();
 }
 
-vector<bitboard_move_t> get_all_moves(bitboard_t& board) {
-    vector<bitboard_move_t> all_moves;
-    all_moves.reserve(218); // Pre-allocate space for efficiency
-    // 218 is the best known upper bound for max moves in any position.
-    // See https://lichess.org/analysis/fromPosition/R6R/3Q4/1Q4Q1/4Q3/2Q4Q/Q4Q2/pp1Q4/kBNN1KB1_w_-_-
+move_list_t get_all_moves(bitboard_t& board) {
+    move_list_t all_moves;
 
     // Get all pieces on the board
     U64 pieces = board.get_all_pieces();
@@ -635,15 +705,15 @@ vector<bitboard_move_t> get_all_moves(bitboard_t& board) {
         int x          = square_idx % 8;
         int y          = square_idx / 8;
 
-        vector<bitboard_move_t> piece_moves = get_piece_moves(board, x, y);
+        move_list_t piece_moves = get_piece_moves(board, x, y);
 
         // Check each move's legality
         Color piece_color = (board.get_all_friendly_pieces(Color::WHITE) & (1ULL << square_idx)) ? Color::WHITE : Color::BLACK;
 
-        for (const auto& move : piece_moves) {
+        for (const auto& move : piece_moves.moves) {
             piece_t captured = make_move(board, move);
             if (!is_in_check(board, piece_color)) {
-                all_moves.push_back(move);
+                all_moves.add(move);
             }
             undo_move(board, move, captured);
         }
@@ -654,33 +724,29 @@ vector<bitboard_move_t> get_all_moves(bitboard_t& board) {
     return all_moves;
 }
 
-vector<bitboard_move_t> generate_all_moves_for_color(bitboard_t& board, Color color) {
-    vector<bitboard_move_t> all_moves;
-    all_moves.reserve(218); // Pre-allocate space for efficiency
-    // 218 is the best known upper bound for max moves in any position.
-    // See https://lichess.org/analysis/fromPosition/R6R/3Q4/1Q4Q1/4Q3/2Q4Q/Q4Q2/pp1Q4/kBNN1KB1_w_-_-
-
+move_list_t generate_all_moves_for_color(bitboard_t& board, Color color) {
+    move_list_t all_moves;
+    
     // Get all pieces of the given color
     U64 pieces = board.get_all_friendly_pieces(color);
 
-    // Iterate through pieces using bit scanning
     while (pieces) {
-        int square_idx = __builtin_ctzll(pieces); // Get index of least significant 1-bit
-        int x          = square_idx % 8;
-        int y          = square_idx / 8;
+        int square_idx = __builtin_ctzll(pieces);
+        int x = square_idx % 8;
+        int y = square_idx / 8;
 
-        vector<bitboard_move_t> piece_moves = get_piece_moves(board, x, y);
+        move_list_t piece_moves = get_piece_moves(board, x, y);
 
         // Check move legality
-        for (const auto& move : piece_moves) {
-            piece_t captured = make_move(board, move);
+        for (int i = 0; i < piece_moves.count; i++) {
+            piece_t captured = moves::make_move(board, piece_moves.moves[i]);
             if (!is_in_check(board, color)) {
-                all_moves.push_back(move);
+                all_moves.add(piece_moves.moves[i]);
             }
-            undo_move(board, move, captured);
+            undo_move(board, piece_moves.moves[i], captured);
         }
 
-        pieces &= (pieces - 1); // Clear least significant 1-bit
+        pieces &= (pieces - 1);
     }
 
     return all_moves;

@@ -42,6 +42,21 @@ struct bitboard_move_t {
           promotion_type(prom) {}
 };
 
+constexpr int MAX_MOVES = 218; // Maximum possible moves in any chess position
+
+struct move_list_t {
+    bitboard_move_t moves[MAX_MOVES];
+    int count;
+
+    move_list_t() : count(0) {}
+
+    void add(const bitboard_move_t& move) {
+        if (count < MAX_MOVES) {
+            moves[count++] = move;
+        }
+    }
+};
+
 static int col_to_int(char col) {
     return col - 'a'; // fx 'a' => 0, 'b' => 1.
 }
@@ -135,28 +150,28 @@ inline vector<bitboard_move_t> translate_to_bitboard_moves(const vector<string>&
 }
 
 // This converts a possible moves board (1's on the squares where the piece can move to) into actual bitboard_move_t's
-inline vector<bitboard_move_t> get_moves_from_possible_moves_bitboard(U64 possible_moves_board, U64 from_square) {
-    vector<bitboard_move_t> moves;
+inline move_list_t get_moves_from_possible_moves_bitboard(U64 possible_moves_board, U64 from_square) {
+    move_list_t moves;
     while (possible_moves_board) {
         U64 to_square = 1ULL << __builtin_ctzll(possible_moves_board);
-        moves.emplace_back(from_square, to_square);       // vector::emplace_back is really just an efficient vector::push_back, that utilizes a constructor in place
-        possible_moves_board &= possible_moves_board - 1; // clear least significant 1-bit
+        moves.add(bitboard_move_t(from_square, to_square));
+        possible_moves_board &= possible_moves_board - 1;
     }
     return moves;
 }
 
 // This does the same as the one above, except it also handles promotions (which only pawns can do, duh!)
-inline vector<bitboard_move_t> get_pawn_moves_from_possible_moves_bitboard(U64 possible_moves_board, U64 from_square, bool is_promotion) {
-    vector<bitboard_move_t> moves;
+inline move_list_t get_pawn_moves_from_possible_moves_bitboard(U64 possible_moves_board, U64 from_square, bool is_promotion) {
+    move_list_t moves;
     while (possible_moves_board) {
         U64 to_square = 1ULL << __builtin_ctzll(possible_moves_board);
         if (is_promotion) {
-            moves.emplace_back(from_square, to_square, PieceType::QUEEN);
-            moves.emplace_back(from_square, to_square, PieceType::ROOK);
-            moves.emplace_back(from_square, to_square, PieceType::BISHOP);
-            moves.emplace_back(from_square, to_square, PieceType::KNIGHT);
+            moves.add(bitboard_move_t(from_square, to_square, PieceType::QUEEN));
+            moves.add(bitboard_move_t(from_square, to_square, PieceType::ROOK));
+            moves.add(bitboard_move_t(from_square, to_square, PieceType::BISHOP));
+            moves.add(bitboard_move_t(from_square, to_square, PieceType::KNIGHT));
         } else {
-            moves.emplace_back(from_square, to_square);
+            moves.add(bitboard_move_t(from_square, to_square));
         }
         possible_moves_board &= (possible_moves_board - 1);
     }
