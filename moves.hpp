@@ -11,6 +11,21 @@
 
 namespace moves {
 
+struct Magic {
+    U64 mask;     // Mask of relevant bits for this square
+    U64 magic;    // Magic number for perfect hashing
+    int shift;    // Number of bits to shift right after multiplication
+    U64* attacks; // Pointer to attack table for this square
+};
+
+// Tables for rooks and bishops
+static Magic rook_magics[64];
+static Magic bishop_magics[64];
+
+// Attack tables - size these based on maximum possible entries needed
+static U64 rook_attacks[102400]; // Conservative size estimate
+static U64 bishop_attacks[5248]; // Conservative size estimate
+
 // Precomputed king moves table (indexed by square position)
 static const U64 king_attack_table[64] = {
     0x0000000000000302ULL, 0x0000000000000705ULL, 0x0000000000000E0AULL, 0x0000000000001C14ULL,
@@ -67,8 +82,7 @@ static const U64 PAWN_ATTACKS_WHITE[64] = {
     0x0200000000000000ULL, 0x0500000000000000ULL, 0x0A00000000000000ULL, 0x1400000000000000ULL,
     0x2800000000000000ULL, 0x5000000000000000ULL, 0xA000000000000000ULL, 0x4000000000000000ULL,
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
-    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL
-};
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL};
 
 static const U64 PAWN_ATTACKS_BLACK[64] = {
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
@@ -86,8 +100,7 @@ static const U64 PAWN_ATTACKS_BLACK[64] = {
     0x0000020000000000ULL, 0x0000050000000000ULL, 0x00000A0000000000ULL, 0x0000140000000000ULL,
     0x0000280000000000ULL, 0x0000500000000000ULL, 0x0000A00000000000ULL, 0x0000400000000000ULL,
     0x0002000000000000ULL, 0x0005000000000000ULL, 0x000A000000000000ULL, 0x0014000000000000ULL,
-    0x0028000000000000ULL, 0x0050000000000000ULL, 0x00A0000000000000ULL, 0x0040000000000000ULL
-};
+    0x0028000000000000ULL, 0x0050000000000000ULL, 0x00A0000000000000ULL, 0x0040000000000000ULL};
 
 static const U64 PAWN_PUSH_WHITE[64] = {
     0x0000000000000100ULL, 0x0000000000000200ULL, 0x0000000000000400ULL, 0x0000000000000800ULL,
@@ -105,8 +118,7 @@ static const U64 PAWN_PUSH_WHITE[64] = {
     0x0100000000000000ULL, 0x0200000000000000ULL, 0x0400000000000000ULL, 0x0800000000000000ULL,
     0x1000000000000000ULL, 0x2000000000000000ULL, 0x4000000000000000ULL, 0x8000000000000000ULL,
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
-    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL
-};
+    0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL};
 
 static const U64 PAWN_PUSH_BLACK[64] = {
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
@@ -124,8 +136,240 @@ static const U64 PAWN_PUSH_BLACK[64] = {
     0x0000010000000000ULL, 0x0000020000000000ULL, 0x0000040000000000ULL, 0x0000080000000000ULL,
     0x0000100000000000ULL, 0x0000200000000000ULL, 0x0000400000000000ULL, 0x0000800000000000ULL,
     0x0001000000000000ULL, 0x0002000000000000ULL, 0x0004000000000000ULL, 0x0008000000000000ULL,
-    0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL
-};
+    0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL};
+
+// Pre-computed magic numbers for bishops and rooks
+constexpr U64 BISHOP_MAGICS[64] = {
+    0x40040844404084ULL, 0x2004208a004208ULL, 0x10190041080202ULL, 0x108060845042010ULL,
+    0x581104180800210ULL, 0x2112080446200010ULL, 0x1080820820060210ULL, 0x3c0808410220200ULL,
+    0x4050404440404ULL, 0x21001420088ULL, 0x24d0080801082102ULL, 0x1020a0a020400ULL,
+    0x40308200402ULL, 0x4011002100800ULL, 0x401484104104005ULL, 0x801010402020200ULL,
+    0x400210c3880100ULL, 0x404022024108200ULL, 0x810018200204102ULL, 0x4002801a02003ULL,
+    0x85040820080400ULL, 0x810102c808880400ULL, 0xe900410884800ULL, 0x8002020480840102ULL,
+    0x220200865090201ULL, 0x2010100a02021202ULL, 0x152048408022401ULL, 0x20080002081110ULL,
+    0x4001001021004000ULL, 0x800040400a011002ULL, 0xe4004081011002ULL, 0x1c004001012080ULL,
+    0x8004200962a00220ULL, 0x8422100208500202ULL, 0x2000402200300c08ULL, 0x8646020080080080ULL,
+    0x80020a0200100808ULL, 0x2010004880111000ULL, 0x623000a080011400ULL, 0x42008c0340209202ULL,
+    0x209188240001000ULL, 0x400408a884001800ULL, 0x110400a6080400ULL, 0x1840060a44020800ULL,
+    0x90080104000041ULL, 0x201011000808101ULL, 0x1a2208080504f080ULL, 0x8012020600211212ULL,
+    0x500861011240000ULL, 0x180806108200800ULL, 0x4000020e01040044ULL, 0x300000261044000aULL,
+    0x802241102020002ULL, 0x20906061210001ULL, 0x5a84841004010310ULL, 0x4010801011c04ULL,
+    0xa010109502200ULL, 0x4a02012000ULL, 0x500201010098b028ULL, 0x8040002811040900ULL,
+    0x28000010020204ULL, 0x6000020202d0240ULL, 0x8918844842082200ULL, 0x4010011029020020ULL};
+
+constexpr U64 ROOK_MAGICS[64] = {
+    0x8a80104000800020ULL, 0x140002000100040ULL, 0x2801880a0017001ULL, 0x100081001000420ULL,
+    0x200020010080420ULL, 0x3001c0002010008ULL, 0x8480008002000100ULL, 0x2080088004402900ULL,
+    0x800098204000ULL, 0x2024401000200040ULL, 0x100802000801000ULL, 0x120800800801000ULL,
+    0x208808088000400ULL, 0x2802200800400ULL, 0x2200800100020080ULL, 0x801000060821100ULL,
+    0x80044006422000ULL, 0x100808020004000ULL, 0x12108a0010204200ULL, 0x140848010000802ULL,
+    0x481828014002800ULL, 0x8094004002004100ULL, 0x4010040010010802ULL, 0x20008806104ULL,
+    0x100400080208000ULL, 0x2040002120081000ULL, 0x21200680100081ULL, 0x20100080080080ULL,
+    0x2000a00200410ULL, 0x20080800400ULL, 0x80088400100102ULL, 0x80004600042881ULL,
+    0x4040008040800020ULL, 0x440003000200801ULL, 0x4200011004500ULL, 0x188020010100100ULL,
+    0x14800401802800ULL, 0x2080040080800200ULL, 0x124080204001001ULL, 0x200046502000484ULL,
+    0x480400080088020ULL, 0x1000422010034000ULL, 0x30200100110040ULL, 0x100021010009ULL,
+    0x2002080100110004ULL, 0x202008004008002ULL, 0x20020004010100ULL, 0x2048440040820001ULL,
+    0x101002200408200ULL, 0x40802000401080ULL, 0x4008142004410100ULL, 0x2060820c0120200ULL,
+    0x1001004080100ULL, 0x20c020080040080ULL, 0x2935610830022400ULL, 0x44440041009200ULL,
+    0x280001040802101ULL, 0x2100190040002085ULL, 0x80c0084100102001ULL, 0x4024081001000421ULL,
+    0x20030a0244872ULL, 0x12001008414402ULL, 0x2006104900a0804ULL, 0x1004081002402ULL};
+    
+U64 get_bishop_mask(int square) {
+    U64 mask = 0ULL;
+    int rank = square / 8;
+    int file = square % 8;
+
+    // Generate rays in all 4 diagonal directions, excluding edges
+    for (int r = rank + 1, f = file + 1; r <= 6 && f <= 6; r++, f++)
+        mask |= (1ULL << (f + r * 8));
+    for (int r = rank + 1, f = file - 1; r <= 6 && f >= 1; r++, f--)
+        mask |= (1ULL << (f + r * 8));
+    for (int r = rank - 1, f = file + 1; r >= 1 && f <= 6; r--, f++)
+        mask |= (1ULL << (f + r * 8));
+    for (int r = rank - 1, f = file - 1; r >= 1 && f >= 1; r--, f--)
+        mask |= (1ULL << (f + r * 8));
+
+    return mask;
+}
+
+U64 get_rook_mask(int square) {
+    U64 mask = 0ULL;
+    int rank = square / 8;
+    int file = square % 8;
+
+    // Generate rays in all 4 orthogonal directions, excluding edges
+    for (int r = rank + 1; r <= 6; r++)
+        mask |= (1ULL << (file + r * 8));
+    for (int r = rank - 1; r >= 1; r--)
+        mask |= (1ULL << (file + r * 8));
+    for (int f = file + 1; f <= 6; f++)
+        mask |= (1ULL << (f + rank * 8));
+    for (int f = file - 1; f >= 1; f--)
+        mask |= (1ULL << (f + rank * 8));
+
+    return mask;
+}
+
+U64 get_bishop_attacks(int square, U64 occupied) {
+    U64 attacks = 0ULL;
+    int rank    = square / 8;
+    int file    = square % 8;
+
+    // Northeast
+    for (int r = rank + 1, f = file + 1; r <= 7 && f <= 7; r++, f++) {
+        attacks |= (1ULL << (f + r * 8));
+        if (occupied & (1ULL << (f + r * 8)))
+            break;
+    }
+    // Northwest
+    for (int r = rank + 1, f = file - 1; r <= 7 && f >= 0; r++, f--) {
+        attacks |= (1ULL << (f + r * 8));
+        if (occupied & (1ULL << (f + r * 8)))
+            break;
+    }
+    // Southeast
+    for (int r = rank - 1, f = file + 1; r >= 0 && f <= 7; r--, f++) {
+        attacks |= (1ULL << (f + r * 8));
+        if (occupied & (1ULL << (f + r * 8)))
+            break;
+    }
+    // Southwest
+    for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
+        attacks |= (1ULL << (f + r * 8));
+        if (occupied & (1ULL << (f + r * 8)))
+            break;
+    }
+
+    return attacks;
+}
+
+U64 get_rook_attacks(int square, U64 occupied) {
+    U64 attacks = 0ULL;
+    int rank    = square / 8;
+    int file    = square % 8;
+
+    // North
+    for (int r = rank + 1; r <= 7; r++) {
+        attacks |= (1ULL << (file + r * 8));
+        if (occupied & (1ULL << (file + r * 8)))
+            break;
+    }
+    // South
+    for (int r = rank - 1; r >= 0; r--) {
+        attacks |= (1ULL << (file + r * 8));
+        if (occupied & (1ULL << (file + r * 8)))
+            break;
+    }
+    // East
+    for (int f = file + 1; f <= 7; f++) {
+        attacks |= (1ULL << (f + rank * 8));
+        if (occupied & (1ULL << (f + rank * 8)))
+            break;
+    }
+    // West
+    for (int f = file - 1; f >= 0; f--) {
+        attacks |= (1ULL << (f + rank * 8));
+        if (occupied & (1ULL << (f + rank * 8)))
+            break;
+    }
+
+    return attacks;
+}
+
+// Get number of bits set in a U64
+inline int count_bits(U64 b) {
+    return __builtin_popcountll(b);
+}
+
+// Get index of least significant bit
+inline int get_lsb(U64 b) {
+    return __builtin_ctzll(b);
+}
+
+U64 find_magic(int square, bool is_bishop) {
+    // Return pre-computed magic numbers instead of searching
+    return is_bishop ? BISHOP_MAGICS[square] : ROOK_MAGICS[square];
+}
+
+void init_magic_bitboards() {
+    int bishop_offset = 0;
+    int rook_offset   = 0;
+
+    // Initialize bishop magics
+    for (int square = 0; square < 64; square++) {
+        bishop_magics[square].mask    = get_bishop_mask(square);
+        int bit_count                 = count_bits(bishop_magics[square].mask);
+        bishop_magics[square].shift   = 64 - bit_count;
+        bishop_magics[square].magic   = find_magic(square, true);
+        bishop_magics[square].attacks = &bishop_attacks[bishop_offset];
+        bishop_offset += 1 << bit_count;
+
+        // Initialize attack table for this square
+        U64 mask       = bishop_magics[square].mask;
+        int variations = 1 << bit_count;
+        for (int i = 0; i < variations; i++) {
+            U64 occupied = 0ULL;
+            U64 temp     = mask;
+            int j        = 0;
+            while (temp) {
+                int lsb = get_lsb(temp);
+                if (i & (1 << j))
+                    occupied |= (1ULL << lsb);
+                temp &= temp - 1;
+                j++;
+            }
+            int index                            = (int)((occupied * bishop_magics[square].magic) >> bishop_magics[square].shift);
+            bishop_magics[square].attacks[index] = get_bishop_attacks(square, occupied);
+        }
+    }
+
+    // Initialize rook magics (similar to bishops)
+    for (int square = 0; square < 64; square++) {
+        rook_magics[square].mask    = get_rook_mask(square);
+        int bit_count               = count_bits(rook_magics[square].mask);
+        rook_magics[square].shift   = 64 - bit_count;
+        rook_magics[square].magic   = find_magic(square, false);
+        rook_magics[square].attacks = &rook_attacks[rook_offset];
+        rook_offset += 1 << bit_count;
+
+        U64 mask       = rook_magics[square].mask;
+        int variations = 1 << bit_count;
+        for (int i = 0; i < variations; i++) {
+            U64 occupied = 0ULL;
+            U64 temp     = mask;
+            int j        = 0;
+            while (temp) {
+                int lsb = get_lsb(temp);
+                if (i & (1 << j))
+                    occupied |= (1ULL << lsb);
+                temp &= temp - 1;
+                j++;
+            }
+            int index                          = (int)((occupied * rook_magics[square].magic) >> rook_magics[square].shift);
+            rook_magics[square].attacks[index] = get_rook_attacks(square, occupied);
+        }
+    }
+}
+
+U64 get_bishop_attacks_magic(int square, U64 occupied) {
+    occupied &= bishop_magics[square].mask;
+    occupied *= bishop_magics[square].magic;
+    occupied >>= bishop_magics[square].shift;
+    return bishop_magics[square].attacks[occupied];
+}
+
+U64 get_rook_attacks_magic(int square, U64 occupied) {
+    occupied &= rook_magics[square].mask;
+    occupied *= rook_magics[square].magic;
+    occupied >>= rook_magics[square].shift;
+    return rook_magics[square].attacks[occupied];
+}
+
+U64 get_queen_attacks_magic(int square, U64 occupied) {
+    return get_bishop_attacks_magic(square, occupied) |
+           get_rook_attacks_magic(square, occupied);
+}
 
 void update_castling_rights(bitboard_t& board, const bitboard_move_t& move, int from_idx, int to_idx) {
     // Check if king moves
@@ -483,30 +727,38 @@ move_list_t get_knight_moves(bitboard_t& board, int x, int y) {
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
 
-move_list_t get_rook_moves(bitboard_t& board, int x, int y) {
-    int pos         = y * 8 + x;
-    U64 from_square = board.single_bitmask(pos);
-
-    U64 occupied        = board.get_all_pieces();
-    Color rook_color    = (board.board_w_R & from_square) ? Color::WHITE : Color::BLACK;
-    U64 friendly_pieces = board.get_all_friendly_pieces(rook_color);
-
-    U64 possible_moves = get_orthogonal_moves(occupied, friendly_pieces, pos);
-
-    return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
-}
-
 move_list_t get_bishop_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 from_square = board.single_bitmask(pos);
 
-    U64 occupied = board.get_all_pieces();
-
-    // Friendly pieces to exclude
+    // Determine bishop color and get friendly pieces to exclude
     Color bishop_color  = (board.board_w_B & from_square) ? Color::WHITE : Color::BLACK;
     U64 friendly_pieces = board.get_all_friendly_pieces(bishop_color);
 
-    U64 possible_moves = get_diagonal_moves(occupied, friendly_pieces, pos);
+    // Get all occupied squares and calculate attacks using magic bitboards
+    U64 occupied       = board.get_all_pieces();
+    U64 possible_moves = get_bishop_attacks_magic(pos, occupied);
+
+    // Remove moves to squares occupied by friendly pieces
+    possible_moves &= ~friendly_pieces;
+
+    return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
+}
+
+move_list_t get_rook_moves(bitboard_t& board, int x, int y) {
+    int pos         = y * 8 + x;
+    U64 from_square = board.single_bitmask(pos);
+
+    // Determine rook color and get friendly pieces to exclude
+    Color rook_color    = (board.board_w_R & from_square) ? Color::WHITE : Color::BLACK;
+    U64 friendly_pieces = board.get_all_friendly_pieces(rook_color);
+
+    // Get all occupied squares and calculate attacks using magic bitboards
+    U64 occupied       = board.get_all_pieces();
+    U64 possible_moves = get_rook_attacks_magic(pos, occupied);
+
+    // Remove moves to squares occupied by friendly pieces
+    possible_moves &= ~friendly_pieces;
 
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
@@ -515,39 +767,42 @@ move_list_t get_queen_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
     U64 from_square = board.single_bitmask(pos);
 
-    U64 occupied        = board.get_all_pieces();
+    // Determine queen color and get friendly pieces to exclude
     Color queen_color   = (board.board_w_Q & from_square) ? Color::WHITE : Color::BLACK;
     U64 friendly_pieces = board.get_all_friendly_pieces(queen_color);
 
-    // Get both diagonal and orthogonal moves
-    U64 possible_moves = get_diagonal_moves(occupied, friendly_pieces, pos) |
-                         get_orthogonal_moves(occupied, friendly_pieces, pos);
+    // Get all occupied squares and calculate attacks using magic bitboards
+    U64 occupied       = board.get_all_pieces();
+    U64 possible_moves = get_queen_attacks_magic(pos, occupied);
+
+    // Remove moves to squares occupied by friendly pieces
+    possible_moves &= ~friendly_pieces;
 
     return get_moves_from_possible_moves_bitboard(possible_moves, from_square);
 }
 
 inline move_list_t get_pawn_moves(bitboard_t& board, int x, int y) {
-    const int pos = y * 8 + x;
+    const int pos         = y * 8 + x;
     const U64 from_square = 1ULL << pos;
     move_list_t moves;
-    
+
     // Determine pawn color and relevant constants
-    const bool is_white = board.board_w_P & from_square;
-    const U64 occupied = board.get_all_pieces();
+    const bool is_white    = board.board_w_P & from_square;
+    const U64 occupied     = board.get_all_pieces();
     const U64 enemy_pieces = board.get_all_friendly_pieces(is_white ? Color::BLACK : Color::WHITE);
-    
+
     // Get attacks using lookup tables
-    const U64 attacks = is_white ? PAWN_ATTACKS_WHITE[pos] : PAWN_ATTACKS_BLACK[pos];
+    const U64 attacks        = is_white ? PAWN_ATTACKS_WHITE[pos] : PAWN_ATTACKS_BLACK[pos];
     const U64 valid_captures = attacks & enemy_pieces;
-    
+
     // Handle captures
     if (valid_captures) {
         const bool is_promoting = (is_white && y == 6) || (!is_white && y == 1);
-        U64 captures = valid_captures;
+        U64 captures            = valid_captures;
         while (captures) {
-            const int to_idx = __builtin_ctzll(captures);
+            const int to_idx    = __builtin_ctzll(captures);
             const U64 to_square = 1ULL << to_idx;
-            
+
             if (is_promoting) {
                 // Add all promotion captures directly
                 moves.add({from_square, to_square, PieceType::QUEEN});
@@ -557,14 +812,14 @@ inline move_list_t get_pawn_moves(bitboard_t& board, int x, int y) {
             } else {
                 moves.add({from_square, to_square});
             }
-            captures &= captures - 1;  // Clear LSB
+            captures &= captures - 1; // Clear LSB
         }
     }
-    
+
     // Handle pushes
     const U64 push_pattern = is_white ? PAWN_PUSH_WHITE[pos] : PAWN_PUSH_BLACK[pos];
-    U64 single_push = push_pattern & ~occupied;
-    
+    U64 single_push        = push_pattern & ~occupied;
+
     if (single_push) {
         const bool is_promoting = (is_white && y == 6) || (!is_white && y == 1);
         if (is_promoting) {
@@ -575,20 +830,18 @@ inline move_list_t get_pawn_moves(bitboard_t& board, int x, int y) {
             moves.add({from_square, single_push, PieceType::KNIGHT});
         } else {
             moves.add({from_square, single_push});
-            
+
             // Double push logic
             if ((is_white && y == 1) || (!is_white && y == 6)) {
-                const U64 double_push = is_white ? 
-                    (single_push << 8) & ~occupied :
-                    (single_push >> 8) & ~occupied;
-                    
+                const U64 double_push = is_white ? (single_push << 8) & ~occupied : (single_push >> 8) & ~occupied;
+
                 if (double_push) {
                     moves.add({from_square, double_push});
                 }
             }
         }
     }
-    
+
     // Handle en passant
     if (board.en_passant_square && (y == (is_white ? 4 : 3))) {
         const U64 ep_attacks = attacks & board.en_passant_square;
@@ -596,10 +849,9 @@ inline move_list_t get_pawn_moves(bitboard_t& board, int x, int y) {
             moves.add({from_square, board.en_passant_square});
         }
     }
-    
+
     return moves;
 }
-
 
 move_list_t get_king_moves(bitboard_t& board, int x, int y) {
     int pos         = y * 8 + x;
@@ -726,14 +978,14 @@ move_list_t get_all_moves(bitboard_t& board) {
 
 move_list_t generate_all_moves_for_color(bitboard_t& board, Color color) {
     move_list_t all_moves;
-    
+
     // Get all pieces of the given color
     U64 pieces = board.get_all_friendly_pieces(color);
 
     while (pieces) {
         int square_idx = __builtin_ctzll(pieces);
-        int x = square_idx % 8;
-        int y = square_idx / 8;
+        int x          = square_idx % 8;
+        int y          = square_idx / 8;
 
         move_list_t piece_moves = get_piece_moves(board, x, y);
 
