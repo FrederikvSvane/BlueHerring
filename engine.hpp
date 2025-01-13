@@ -9,21 +9,21 @@
 #include "piece_t.hpp"
 
 namespace eval{
-int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
+int negamax(bitboard_t &board, int depth, int alpha, int beta, Color color) {
 
   // Check for checkmate
   if (depth == 0) {
     return eval::evaluate_position(board);
   }
 
-  vector<move_t> possible_coordinate_moves = coordinate_moves::generate_all_moves_for_color(board, color);
+  vector<bitboard_move_t> possible_moves = bitboard_moves::generate_all_moves_for_color(board, color);
   
   if (color == Color::WHITE) {
     int max_score = -2147483647;
 
-    for (move_t move : possible_coordinate_moves) {
+    for (bitboard_move_t move : possible_moves) {
       // Add move to board
-      piece_t cap_piece = coordinate_moves::make_move(board, move);
+      piece_t cap_piece = bitboard_moves::make_move(board, move);
 
       // Calculate score of this branch (maximize for white)
       int score = negamax(board, depth-1, alpha, beta, Color::BLACK);
@@ -31,7 +31,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
       alpha = max(alpha, score);
 
       // Undo move from board
-      coordinate_moves::undo_move(board, move, cap_piece);
+      bitboard_moves::undo_move(board, move, cap_piece);
 
       // Remove branch if it's irrelevant
       if (beta <= alpha) {
@@ -44,9 +44,9 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
   else {
     int min_score = 2147483647;
 
-    for (move_t move : possible_coordinate_moves) {
+    for (bitboard_move_t move : possible_moves) {
       // Add move to board
-      piece_t cap_piece = coordinate_moves::make_move(board, move);
+      piece_t cap_piece = bitboard_moves::make_move(board, move);
 
       // Calculate score of this branch (minimize for black)
       int score = negamax(board, depth-1, alpha, beta, Color::WHITE);
@@ -54,7 +54,7 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
       alpha = min(alpha, score);
 
       // Undo move from board
-      coordinate_moves::undo_move(board, move, cap_piece);
+      bitboard_moves::undo_move(board, move, cap_piece);
 
       // Remove branch if it's irrelevant
       if (beta <= alpha) {
@@ -68,24 +68,21 @@ int negamax(board_t &board, int depth, int alpha, int beta, Color color) {
 }
 
 
-move_t get_best_move(board_t &board, int depth, Color color) {
+bitboard_move_t get_best_move(bitboard_t &board, int depth, Color color) {
 
-  vector<move_t> possible_coordinate_moves = coordinate_moves::generate_all_moves_for_color(board, color);
-  for(move_t move: possible_coordinate_moves){
-    //cout << "Moving from: (" << move.from_x << "," << move.from_y << ") to: (" << move.to_x << "," << move.to_y << ")" << endl;
-  }
+  vector<bitboard_move_t> possible_moves = bitboard_moves::generate_all_moves_for_color(board, color);
 
   // check that there are possible coordinate_moves (aka not checkmate/stalemate)
 
-  move_t best_move = possible_coordinate_moves[0];
+  bitboard_move_t best_move = possible_moves[0];
 
   if (color == Color::WHITE) { // Playing as white
     int best_score = -2147483647;
 
-    for (move_t move : possible_coordinate_moves) {
+    for (bitboard_move_t move : possible_moves) {
 
       // Add move to board
-      piece_t cap_piece = coordinate_moves::make_move(board, move);
+      piece_t cap_piece = bitboard_moves::make_move(board, move);
 
       int score = negamax(board, depth - 1, -2147483647, 2147483647, !color);
 
@@ -95,15 +92,15 @@ move_t get_best_move(board_t &board, int depth, Color color) {
       }
 
       // Undo move
-      coordinate_moves::undo_move(board, move, cap_piece);
+      bitboard_moves::undo_move(board, move, cap_piece);
     }
   }
   else { // Playing as black
     int best_score = 2147483647;
 
-    for (move_t move : possible_coordinate_moves) {
+    for (bitboard_move_t move : possible_moves) {
       // Add move to board
-      piece_t cap_piece = coordinate_moves::make_move(board, move);
+      piece_t cap_piece = bitboard_moves::make_move(board, move);
 
       int score = negamax(board, depth - 1, -2147483647, 2147483647, !color);
 
@@ -113,7 +110,7 @@ move_t get_best_move(board_t &board, int depth, Color color) {
       }
 
       // Undo move
-      coordinate_moves::undo_move(board, move, cap_piece);
+      bitboard_moves::undo_move(board, move, cap_piece);
     }
   }
 

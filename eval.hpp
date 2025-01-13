@@ -83,10 +83,9 @@ constexpr Score KING_TABLE[64] = {
      20, 30, 10,  0,  0, 10, 30, 20
 };
 
-Score get_piece_square_value(PieceType type, int x, int y, Color color) {
-    int square_index = board_t::index(x, y);
-    // flip square index for black pieces
-    int adjusted_index = (color == Color::WHITE) ? square_index : (63 - square_index);
+Score get_piece_square_value(PieceType type, int square_idx, Color color) {
+    // Flip square index for black pieces
+    int adjusted_index = (color == Color::WHITE) ? (63 - square_idx) : square_idx;
     
     switch (type) {
         case PieceType::PAWN: return PAWN_TABLE[adjusted_index];
@@ -99,15 +98,13 @@ Score get_piece_square_value(PieceType type, int x, int y, Color color) {
     }
 }
 
-Score evaluate_position(const board_t& board) {
+Score evaluate_position(const bitboard_t& board) {
     Score score = 0;
 
-    for (const square_t& square : board.board) {
-        if (square.piece.type == PieceType::EMPTY)
-            continue;
-
+    // Helper function to evaluate pieces of a specific type
+    auto evaluate_pieces = [&](U64 bitboard, PieceType type, Color color) {
         Score piece_value = 0;
-        switch (square.piece.type) {
+        switch (type) {
             case PieceType::PAWN: piece_value = PAWN_VALUE; break;
             case PieceType::KNIGHT: piece_value = KNIGHT_VALUE; break;
             case PieceType::BISHOP: piece_value = BISHOP_VALUE; break;
@@ -117,15 +114,31 @@ Score evaluate_position(const board_t& board) {
             default: break;
         }
 
-        piece_value += get_piece_square_value(
-            square.piece.type,
-            square.x,
-            square.y,
-            square.piece.color
-        );
+        U64 pieces = bitboard;
+        while (pieces) {
+            int square_idx = __builtin_ctzll(pieces); // Get index of least significant 1-bit
+            score += (color == Color::WHITE) ? 
+                    (piece_value + get_piece_square_value(type, square_idx, color)) :
+                    -(piece_value + get_piece_square_value(type, square_idx, color));
+            pieces &= (pieces - 1); // Clear least significant 1-bit
+        }
+    };
 
-        score += (square.piece.color == Color::WHITE) ? piece_value : -piece_value;
-    }
+    // Evaluate white pieces
+    evaluate_pieces(board.board_w_P, PieceType::PAWN, Color::WHITE);
+    evaluate_pieces(board.board_w_N, PieceType::KNIGHT, Color::WHITE);
+    evaluate_pieces(board.board_w_B, PieceType::BISHOP, Color::WHITE);
+    evaluate_pieces(board.board_w_R, PieceType::ROOK, Color::WHITE);
+    evaluate_pieces(board.board_w_Q, PieceType::QUEEN, Color::WHITE);
+    evaluate_pieces(board.board_w_K, PieceType::KING, Color::WHITE);
+
+    // Evaluate black pieces
+    evaluate_pieces(board.board_b_P, PieceType::PAWN, Color::BLACK);
+    evaluate_pieces(board.board_b_N, PieceType::KNIGHT, Color::BLACK);
+    evaluate_pieces(board.board_b_B, PieceType::BISHOP, Color::BLACK);
+    evaluate_pieces(board.board_b_R, PieceType::ROOK, Color::BLACK);
+    evaluate_pieces(board.board_b_Q, PieceType::QUEEN, Color::BLACK);
+    evaluate_pieces(board.board_b_K, PieceType::KING, Color::BLACK);
 
     return score;
 }
