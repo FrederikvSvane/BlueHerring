@@ -473,8 +473,10 @@ vector<bitboard_move_t> get_pawn_moves(bitboard_t& board, int x, int y) {
         if ((pawn_color == Color::WHITE && y == 1) ||
             (pawn_color == Color::BLACK && y == 6)) {
             U64 double_push = (single_push << direction) & ~occupied;
+
             if (pawn_color == Color::BLACK)
-                double_push = (from_square >> direction) & ~occupied; // for black
+                double_push = (single_push >> direction) & ~occupied; // for black
+
             if (double_push) {
                 vector<bitboard_move_t> d_push_moves = get_pawn_moves_from_possible_moves_bitboard(double_push, from_square, false);
                 possible_moves.insert(possible_moves.end(), d_push_moves.begin(), d_push_moves.end());
