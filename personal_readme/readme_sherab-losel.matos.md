@@ -31,3 +31,4 @@
 
 # Week 6
 - Bugfix wrapping pawn attacks on is_square_under_attack()
+- Bugfix generate_all_moves_for_color(). Bitboard now gets the correct number of moves!
