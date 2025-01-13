@@ -17,10 +17,10 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     string input_file_name  = argv[2];
     string output_file_name = argv[4];
 
-    // tests::run_rules_test_suite();
-    // tests::run_perft_suite();
+    tests::run_rules_test_suite();
+    tests::run_perft_suite();
     tests::run_speed_test_suite();
-    // tests::run_eval_test_suite();
+    tests::run_eval_test_suite();
 
     // Pause execution for 2 seconds to better follow a chess game
     // sleep(2);
