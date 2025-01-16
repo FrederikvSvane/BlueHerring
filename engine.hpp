@@ -12,109 +12,98 @@ namespace engine {
 constexpr int NEG_INFINITY = -2147483647;
 constexpr int POS_INFINITY = 2147483647;
 
-int negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
-    // Base case
+struct SearchResult {
+    int score;
+    int nodes;
+};
+
+SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
     if (depth == 0) {
-        return eval::evaluate_position(board);
+        return {eval::evaluate_position(board), 1}; 
     }
 
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
+    int nodes = 1;
+    int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
-    if (color == Color::WHITE) {
-        int max_score = NEG_INFINITY;
+    for (int i = 0; i < possible_moves.count; i++) {
+        piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
+        SearchResult result = negamax(board, depth - 1, alpha, beta, !color);
+        nodes += result.nodes;
 
-        for (int i = 0; i < possible_moves.count; i++) {
-            // Add move to board
-            piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
-
-            // Calculate score of this branch (maximize for white)
-            int score = negamax(board, depth - 1, alpha, beta, Color::BLACK);
-            max_score = max(max_score, score);
-            alpha     = max(alpha, score);
-
-            // Undo move from board
-            moves::undo_move(board, possible_moves.moves[i], cap_piece);
-
-            // Remove branch if it's irrelevant
-            if (beta <= alpha) {
-                break;
-            }
+        if (color == Color::WHITE) {
+            best_score = std::max(best_score, result.score);
+            alpha = std::max(alpha, result.score);
+        } else {
+            best_score = std::min(best_score, result.score);
+            beta = std::min(beta, result.score);
         }
 
-        return max_score;
-    } else {
-        int min_score = POS_INFINITY;
+        moves::undo_move(board, possible_moves.moves[i], cap_piece);
 
-        for (int i = 0; i < possible_moves.count; i++) {
-            // Add move to board
-            piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
-
-            // Calculate score of this branch (minimize for black)
-            int score = negamax(board, depth - 1, alpha, beta, Color::WHITE);
-            min_score = min(min_score, score);
-            alpha     = min(alpha, score);
-
-            // Undo move from board
-            moves::undo_move(board, possible_moves.moves[i], cap_piece);
-
-            // Remove branch if it's irrelevant
-            if (beta <= alpha) {
-                break;
-            }
+        if (alpha >= beta) {
+            break; // Beta cutoff
         }
-
-        return min_score;
     }
+
+    return {best_score, nodes};
 }
 
-bitboard_move_t get_best_move(bitboard_t& board, int depth, Color color) {
+
+std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int depth, Color color) {
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
 
-    // Check for no legal moves
     if (possible_moves.count == 0) {
         throw std::runtime_error("No legal moves available");
     }
 
     bitboard_move_t best_move = possible_moves.moves[0];
+    SearchResult best_result = { (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY, 0 };
 
-    if (color == Color::WHITE) { // Playing as white
-        int best_score = NEG_INFINITY;
+    for (int i = 0; i < possible_moves.count; i++) {
+        piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
+        SearchResult result = negamax(board, depth - 1, NEG_INFINITY, POS_INFINITY, !color);
 
-        for (int i = 0; i < possible_moves.count; i++) {
-            // Add move to board
-            piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
-
-            int score = negamax(board, depth - 1, NEG_INFINITY, POS_INFINITY, !color);
-
-            if (score > best_score) {
-                best_score = score;
-                best_move  = possible_moves.moves[i];
-            }
-
-            // Undo move
-            moves::undo_move(board, possible_moves.moves[i], cap_piece);
+        if ((color == Color::WHITE && result.score > best_result.score) ||
+            (color == Color::BLACK && result.score < best_result.score)) {
+            best_result = result;
+            best_move = possible_moves.moves[i];
         }
-    } else { // Playing as black
-        int best_score = POS_INFINITY;
 
-        for (int i = 0; i < possible_moves.count; i++) {
-            // Add move to board
-            piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
-
-            int score = negamax(board, depth - 1, NEG_INFINITY, POS_INFINITY, !color);
-
-            if (score < best_score) {
-                best_score = score;
-                best_move  = possible_moves.moves[i];
-            }
-
-            // Undo move
-            moves::undo_move(board, possible_moves.moves[i], cap_piece);
-        }
+        moves::undo_move(board, possible_moves.moves[i], cap_piece);
+        best_result.nodes += result.nodes;
     }
 
-    return best_move;
+    return {best_move, best_result};
 }
+
+
+// ---- FOR TESTING ----
+
+SearchResult negamax_without_pruning(bitboard_t& board, int depth, Color color) {
+    if (depth == 0) {
+        return {color == Color::WHITE ? eval::evaluate_position(board)
+                                      : -eval::evaluate_position(board),
+                1};
+    }
+
+    move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
+    int nodes                  = 1;
+    int max_score              = NEG_INFINITY;
+
+    for (int i = 0; i < possible_moves.count; i++) {
+        piece_t cap_piece   = moves::make_move(board, possible_moves.moves[i]);
+        SearchResult result = negamax_without_pruning(board, depth - 1, !color);
+        nodes += result.nodes;
+        int score = -result.score;
+        max_score = max(max_score, score);
+        moves::undo_move(board, possible_moves.moves[i], cap_piece);
+    }
+
+    return {max_score, nodes};
+}
+
+// ---------------------
 
 } // namespace engine
 

@@ -550,6 +550,44 @@ void test_check_and_checkmate() {
     assert(!moves::is_in_check(board, Color::WHITE));
 }
 
+void test_alpha_beta_pruning() {
+    bitboard_t board;
+    board.initialize_board_from_fen("r1bqk2r/ppp2ppp/2n2n2/1B1pp3/1b2P3/2NP1N2/PPP2PPP/R1BQK2R w KQkq - 0 7");
+
+    // Get results with pruning
+    auto result_with_pruning = engine::negamax(board, 4, engine::NEG_INFINITY, engine::POS_INFINITY, Color::WHITE);
+
+    // Get results without pruning
+    auto result_without_pruning = engine::negamax_without_pruning(board, 4, Color::WHITE);
+
+    // Verify results
+    assert(result_with_pruning.nodes < result_without_pruning.nodes);
+    assert(result_with_pruning.score == result_without_pruning.score);
+
+    std::cout << "✓ Pruning test passed\n";
+    std::cout << "Nodes with pruning: " << result_with_pruning.nodes << "\n";
+    std::cout << "Nodes without pruning: " << result_without_pruning.nodes << "\n";
+    std::cout << "But the best score remains the same" << "\n";
+}
+
+void test_white_maximizes() {
+    bitboard_t board;
+    board.initialize_board_from_fen("p7/8/8/8/8/3p4/4P3/8");
+    auto [best_move, search_result] = engine::get_best_move(board, 7, Color::WHITE);
+    string string_move              = encode_move(bitboard_move_to_coordinate_move(best_move));
+    assert(string_move == "e2d3");
+    assert(search_result.score > 0);
+}
+
+void test_black_minimizes() {
+    bitboard_t board;
+    board.initialize_board_from_fen("8/3p4/4P3/8/8/8/8/7P");
+    auto [best_move, search_result] = engine::get_best_move(board, 7, Color::BLACK);
+    string string_move              = encode_move(bitboard_move_to_coordinate_move(best_move));
+    assert(string_move == "d7e6");
+    assert(search_result.score < 0);
+}
+
 void run_rules_test_suite() {
     cout << "\nRunning move/undo move tests...\n"
          << endl;
@@ -560,6 +598,9 @@ void run_rules_test_suite() {
     run_move_test("Pawn promotion", test_pawn_promotion);
     run_move_test("Board state history", test_board_state_history);
     run_move_test("Check and checkmate", test_check_and_checkmate);
+    test_alpha_beta_pruning();
+    test_white_maximizes();
+    test_black_minimizes();
 }
 
 void run_speed_test_suite() {
