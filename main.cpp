@@ -28,6 +28,13 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     bitboard_t bitboard;
     bitboard.initialize_starting_board();
     vector<string> string_moves   = read_moves_from_input_file(&input_file_name);
+
+    string book_move_str = get_move_from_book(string_moves);
+    if (book_move_str != "") {
+        write_move_to_output_file(&output_file_name, &book_move_str);
+        return 0;
+    }
+
     vector<bitboard_move_t> moves = translate_to_bitboard_moves(string_moves);
     for (const bitboard_move_t& move : moves) {
         moves::make_move(bitboard, move);
@@ -39,3 +46,4 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     write_move_to_output_file(&output_file_name, &best_move_str);
     return 0;
 }
+
