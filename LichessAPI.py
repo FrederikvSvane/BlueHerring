@@ -1,12 +1,13 @@
-import chess
-import chess.engine
 import berserk
 import tempfile
 import os
 import subprocess
-from pathlib import Path
+import sys
+import time
+from requests.exceptions import ConnectionError
+from berserk.exceptions import ApiError
 
-TOKEN = "your_lichess_token_here"
+TOKEN = "lip_vOpf6HFRSy9vdyUsJTgi"
 ENGINE_PATH = "./BlueHerring"  # Path to your compiled engine
 
 class ChessEngineWrapper:
@@ -51,49 +52,78 @@ class ChessEngineWrapper:
             # Cleanup temporary files
             os.unlink(history_path)
             os.unlink(output_path)
-
+            
 def main():
-    # Initialize Lichess connection
-    session = berserk.TokenSession(TOKEN)
-    client = berserk.Client(session)
-    
-    # Initialize engine wrapper
-    engine_wrapper = ChessEngineWrapper()
-    
-    # Accept challenges and play games
-    for event in client.bots.stream_incoming_events():
-        if event['type'] == 'challenge':
-            client.bots.accept_challenge(event['challenge']['id'])
+    while True:  # Main reconnection loop
+        try:
+            session = berserk.TokenSession(TOKEN)
+            client = berserk.Client(session)
+            engine = ChessEngineWrapper()
             
-        elif event['type'] == 'gameStart':
-            game_id = event['game']['id']
+            print("Starting bot...")
+            last_event_type = None
             
-            # Initialize game state
-            board = chess.Board()
-            moves_history = []
-            
-            # Stream the game state
-            for state in client.bots.stream_game_state(game_id):
-                if state['type'] == 'gameState':
-                    # Convert UCI moves to your engine's format
-                    moves = state['moves'].split()
+            for event in client.bots.stream_incoming_events():
+                print(f"\nReceived event: {event['type']}")
+                
+                # Handle challenges (including rematches)
+                if event['type'] == 'challenge':
+                    # Auto accept if it's a rematch (previous event was gameFinish)
+                    if last_event_type == 'gameFinish':
+                        print("Accepting rematch!")
+                    else:
+                        print("Accepting challenge!")
+                    client.bots.accept_challenge(event['challenge']['id'])
+                
+                # Update last event type
+                last_event_type = event['type']
+                
+                if event['type'] == 'gameStart':
+                    game_id = event['game']['id']
+                    bot_is_white = event['game']['color'] == 'white'
+                    print(f"Game started! ID: {game_id}, Playing as: {'white' if bot_is_white else 'black'}")
                     
-                    # Update moves history
-                    if moves:
-                        moves_history = [move for move in moves]
-                    
-                    # Check if it's our turn
-                    is_our_turn = len(moves) % 2 == (0 if state['white']['id'] == client.account.get()['id'] else 1)
-                    
-                    if is_our_turn:
-                        # Get move from engine
-                        engine_move = engine_wrapper.get_engine_move(moves_history)
+                    try:
+                        for state in client.bots.stream_game_state(game_id):
+                            if state['type'] == 'gameFull':
+                                moves = state['state']['moves'].split() if state['state']['moves'] else []
+                            elif state['type'] == 'gameState':
+                                moves = state['moves'].split() if state['moves'] else []
+                            
+                            is_our_turn = len(moves) % 2 == (0 if bot_is_white else 1)
+                            print(f"Moves: {moves}")
+                            print(f"Our turn: {is_our_turn}")
+                            
+                            if is_our_turn:
+                                print("Getting engine move...")
+                                engine_move = engine.get_engine_move(moves)
+                                print(f"Engine suggests: {engine_move}")
+                                
+                                # Retry logic for making moves
+                                max_retries = 3
+                                for attempt in range(max_retries):
+                                    try:
+                                        client.bots.make_move(game_id, engine_move)
+                                        print("Move made!")
+                                        break
+                                    except (ConnectionError, ApiError) as e:
+                                        if attempt == max_retries - 1:
+                                            raise
+                                        print(f"Move failed, retrying... (attempt {attempt + 1}/{max_retries})")
+                                        time.sleep(1)
+                                
+                    except (ConnectionError, ApiError) as e:
+                        print(f"Game {game_id} ended or connection lost: {e}")
+                        continue
                         
-                        # Make the move on Lichess
-                        client.bots.make_move(game_id, engine_move)
-                        
-                        # Update local board
-                        board.push(chess.Move.from_uci(engine_move))
+        except KeyboardInterrupt:
+            print("\nStopping bot...")
+            sys.exit()
+            
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            print("Reconnecting in 5 seconds...")
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()
