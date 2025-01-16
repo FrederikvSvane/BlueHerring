@@ -6,8 +6,12 @@ import sys
 import time
 from requests.exceptions import ConnectionError
 from berserk.exceptions import ApiError
+import json
 
-TOKEN = "lip_vOpf6HFRSy9vdyUsJTgi"
+with open('config.json') as f:
+    config = json.load(f)
+TOKEN = config['lichess_token']
+
 ENGINE_PATH = "./BlueHerring"  # Path to your compiled engine
 
 class ChessEngineWrapper:
