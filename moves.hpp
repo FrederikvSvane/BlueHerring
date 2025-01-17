@@ -4,6 +4,7 @@
 
 #include "board_t.hpp"
 #include "move_t.hpp"
+#include "hash.hpp"
 #include <array>
 #include <cmath>    //for absolute value
 #include <stdint.h> //had to include this, otherwise didn't compile on my pc
@@ -166,6 +167,8 @@ void update_en_passant_square(bitboard_t& board, const bitboard_move_t& move, in
 piece_t make_move(bitboard_t& board, const bitboard_move_t& move) {
     // Saving current state (pushing to the stack) before making any changes
     board.save_current_state();
+    U64 hash = hash_t::compute_hash(board);
+    board.position_hash_history.push_back(hash);
 
     int from_idx = __builtin_ctzll(move.from_board);
     int to_idx   = __builtin_ctzll(move.to_board);
@@ -252,8 +255,8 @@ piece_t make_move(bitboard_t& board, const bitboard_move_t& move) {
     update_castling_rights(board, move, from_idx, to_idx);
     update_en_passant_square(board, move, from_idx, to_idx);
 
-    // Add move to history
-    board.history.push_back(move);
+    // Add move to move_history
+    board.move_history.push_back(move);
 
     // Make the actual move (and handle promotion)
     if (move.promotion_type != PieceType::EMPTY) {
@@ -278,13 +281,9 @@ void undo_move(bitboard_t& board, const bitboard_move_t& move, const piece_t& ca
     int from_idx = __builtin_ctzll(move.from_board);
     int to_idx   = __builtin_ctzll(move.to_board);
 
-    // Remove the move from move history
-    if (board.history.empty()) {
-        throw std::runtime_error("No moves to undo");
-    }
-    board.history.pop_back();
 
-    // Restore the previous state
+    board.move_history.pop_back();
+    board.position_hash_history.pop_back();
     board.restore_previous_state();
 
     // Get moving piece (from destination square since the move was already made)

@@ -41,7 +41,7 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     }
     Color color_to_move = (moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
 
-    bitboard_move_t best_move = engine::get_best_move(bitboard, 4, color_to_move).first;
+    bitboard_move_t best_move = engine::get_best_move(bitboard, 3, color_to_move).first;
     string best_move_str      = encode_move(bitboard_move_to_coordinate_move(best_move));
     write_move_to_output_file(&output_file_name, &best_move_str);
     return 0;

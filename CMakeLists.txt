@@ -12,6 +12,6 @@ include_directories(.)
 
 # add_library(myLibExample Foo.cpp Foo.h)
 
-add_executable(BlueHerring main.cpp board_t.hpp file_util.hpp operators_util.hpp piece_t.hpp square_t.hpp eval.hpp)
+add_executable(BlueHerring main.cpp board_t.hpp file_util.hpp operators_util.hpp piece_t.hpp square_t.hpp eval.hpp hash.hpp)
 
 # target_link_libraries(blueherring PRIVATE)

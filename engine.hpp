@@ -7,6 +7,7 @@
 #include "move_t.hpp"
 #include "moves.hpp"
 #include "piece_t.hpp"
+#include "hash.hpp"
 
 namespace engine {
 constexpr int NEG_INFINITY = -2147483647;
@@ -18,25 +19,42 @@ struct SearchResult {
 };
 
 SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
+    move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
+
+    // Base cases in order of computational complexity:
+
     if (depth == 0) {
-        return {eval::evaluate_position(board), 1}; 
+        return {eval::evaluate_position(board), 1};
     }
 
-    move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
-    int nodes = 1;
+    // No legal moves - determine if checkmate or stalemate
+    if (possible_moves.count == 0) {
+        if (moves::is_in_check(board, color)) {
+            // Checkmate: Return worst possible score for the side to move
+            return {color == Color::WHITE ? NEG_INFINITY : POS_INFINITY, 1};
+        }
+        // Stalemate: Return draw score
+        return {0, 1};
+    }
+
+    // Threefold rep
+    if (hash_t::is_threefold_repetition(board)) {
+        return {0, 1};
+    }
+    int nodes      = 1;
     int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
     for (int i = 0; i < possible_moves.count; i++) {
-        piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
+        piece_t cap_piece   = moves::make_move(board, possible_moves.moves[i]);
         SearchResult result = negamax(board, depth - 1, alpha, beta, !color);
         nodes += result.nodes;
 
         if (color == Color::WHITE) {
             best_score = std::max(best_score, result.score);
-            alpha = std::max(alpha, result.score);
+            alpha      = std::max(alpha, result.score);
         } else {
             best_score = std::min(best_score, result.score);
-            beta = std::min(beta, result.score);
+            beta       = std::min(beta, result.score);
         }
 
         moves::undo_move(board, possible_moves.moves[i], cap_piece);
@@ -49,7 +67,6 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
     return {best_score, nodes};
 }
 
-
 std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int depth, Color color) {
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
 
@@ -58,16 +75,16 @@ std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int de
     }
 
     bitboard_move_t best_move = possible_moves.moves[0];
-    SearchResult best_result = { (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY, 0 };
+    SearchResult best_result  = {(color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY, 0};
 
     for (int i = 0; i < possible_moves.count; i++) {
-        piece_t cap_piece = moves::make_move(board, possible_moves.moves[i]);
+        piece_t cap_piece   = moves::make_move(board, possible_moves.moves[i]);
         SearchResult result = negamax(board, depth - 1, NEG_INFINITY, POS_INFINITY, !color);
 
         if ((color == Color::WHITE && result.score > best_result.score) ||
             (color == Color::BLACK && result.score < best_result.score)) {
             best_result = result;
-            best_move = possible_moves.moves[i];
+            best_move   = possible_moves.moves[i];
         }
 
         moves::undo_move(board, possible_moves.moves[i], cap_piece);
@@ -76,7 +93,6 @@ std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int de
 
     return {best_move, best_result};
 }
-
 
 // ---- FOR TESTING ----
 

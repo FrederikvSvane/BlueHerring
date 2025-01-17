@@ -567,7 +567,9 @@ void test_alpha_beta_pruning() {
     std::cout << "✓ Pruning test passed\n";
     std::cout << "Nodes with pruning: " << result_with_pruning.nodes << "\n";
     std::cout << "Nodes without pruning: " << result_without_pruning.nodes << "\n";
-    std::cout << "But the best score remains the same" << "\n";
+    std::cout << "But the best score remains the same :) \n"
+              << endl;
+    ;
 }
 
 void test_white_maximizes() {
@@ -588,6 +590,39 @@ void test_black_minimizes() {
     assert(search_result.score < 0);
 }
 
+void test_threefold_repetition() {
+    // Test more or less copied from https://www.chess.com/terms/threefold-repetition-chess
+    bitboard_t board;
+    // Initial position with just kings and rooks - easy to create repetition
+    board.initialize_board_from_fen("1kr5/1b3R2/1B2p3/4Pn1p/R7/2P3p1/1KP4r/8 w - - 0 1");
+
+    // List of moves that should create a threefold repetition
+    vector<string> moves = {
+        "b7a7",
+        "b8a8",
+        "a7g1",
+        "a8b8",
+        "g1a7",
+        "b8a8",
+        "a7f2",
+        "a8b8",
+        "f2a7",
+        // "b8a8" only possible move => trigger threefold without actually making it
+    };
+
+    // Make all moves
+    for (const string& move_str : moves) {
+        bitboard_move_t move = coordinate_move_to_bitboard_move(parse_move_from_string(move_str));
+        moves::make_move(board, move);
+    }
+
+    // Assert threefold repetition
+    assert(hash_t::is_threefold_repetition(board));
+    printf("Threefold repetition test passed!\n");
+
+    // Test that should eval to false:
+}
+
 void run_rules_test_suite() {
     cout << "\nRunning move/undo move tests...\n"
          << endl;
@@ -601,6 +636,7 @@ void run_rules_test_suite() {
     test_alpha_beta_pruning();
     test_white_maximizes();
     test_black_minimizes();
+    test_threefold_repetition();
 }
 
 void run_speed_test_suite() {

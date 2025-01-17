@@ -42,8 +42,9 @@ struct bitboard_t {
     U64 move_table_white[64] = {};
     U64 move_table_black[64] = {};
 
-    vector<bitboard_move_t> history;
+    vector<bitboard_move_t> move_history;
     vector<bitboard_state> state_history;
+    vector<U64> position_hash_history;
     Color active_color;
 
     // Current state
