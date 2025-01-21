@@ -8,6 +8,13 @@
 #include "moves.hpp"
 #include "piece_t.hpp"
 #include "hash.hpp"
+#include <chrono>
+
+extern std::chrono::_V2::system_clock::time_point t0;
+extern std::chrono::_V2::system_clock::time_point t;
+extern std::chrono::_V2::system_clock::rep duration;
+
+extern bitboard_move_t unique_best_move;
 
 namespace engine {
 constexpr int NEG_INFINITY = -2147483647;
@@ -21,8 +28,8 @@ struct SearchResult {
 SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
 
-    // Base cases in order of computational complexity:
 
+    // Base cases in order of computational complexity:
     if (depth == 0) {
         return {eval::evaluate_position(board), 1};
     }
@@ -43,6 +50,13 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
     }
     int nodes      = 1;
     int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
+
+    // Testing the time
+    t = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
+    if (duration > 9500) {
+        return {best_score, nodes};
+    }
 
     for (int i = 0; i < possible_moves.count; i++) {
         piece_t cap_piece   = moves::make_move(board, possible_moves.moves[i]);
@@ -78,6 +92,14 @@ std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int de
     SearchResult best_result  = {(color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY, 0};
 
     for (int i = 0; i < possible_moves.count; i++) {
+
+        // Testing the time
+        t = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
+        if (duration > 9500) {
+            return {best_move, best_result};
+        }
+
         piece_t cap_piece   = moves::make_move(board, possible_moves.moves[i]);
         SearchResult result = negamax(board, depth - 1, NEG_INFINITY, POS_INFINITY, !color);
 
@@ -91,6 +113,7 @@ std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int de
         best_result.nodes += result.nodes;
     }
 
+    unique_best_move = best_move;
     return {best_move, best_result};
 }
 

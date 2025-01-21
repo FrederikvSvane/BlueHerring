@@ -7,6 +7,13 @@
 #include "moves.hpp"
 #include "tests.hpp"
 #include <unistd.h>
+#include <chrono>
+
+std::chrono::_V2::system_clock::time_point t0 = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point t = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::rep duration; // std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count()
+
+bitboard_move_t unique_best_move;
 
 int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.csv {std::locale::global(std::locale("en_US.UTF-8")); // To enable printing of unicode characters}
 {
@@ -41,9 +48,23 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
     }
     Color color_to_move = (moves.size() % 2 == 0) ? Color::WHITE : Color::BLACK;
 
-    bitboard_move_t best_move = engine::get_best_move(bitboard, 3, color_to_move).first;
-    string best_move_str      = encode_move(bitboard_move_to_coordinate_move(best_move));
+    // Timing fail-safe move
+    bitboard_move_t best_move_return = engine::get_best_move(bitboard, 2, color_to_move).first;
+
+    for (int depth = 5; depth < 100; depth++) {
+        // Testing the time
+        t = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
+        if (duration > 9500) {
+            cout << depth-1 << std::endl;
+            break;
+        }
+        best_move_return = engine::get_best_move(bitboard, depth, color_to_move).first;        
+    }   
+
+    string best_move_str      = encode_move(bitboard_move_to_coordinate_move(unique_best_move));
     write_move_to_output_file(&output_file_name, &best_move_str);
+    cout << duration << std::endl;
     return 0;
 }
 
