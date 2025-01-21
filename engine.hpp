@@ -26,29 +26,22 @@ struct SearchResult {
 };
 
 SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
-    move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
-
-
-    // Base cases in order of computational complexity:
+    
+    
     if (depth == 0) {
         return {eval::evaluate_position(board), 1};
     }
 
-    // No legal moves - determine if checkmate or stalemate
+    move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
+
     if (possible_moves.count == 0) {
         if (moves::is_in_check(board, color)) {
-            // Checkmate: Return worst possible score for the side to move
-            return {color == Color::WHITE ? NEG_INFINITY : POS_INFINITY, 1};
-        }
-        // Stalemate: Return draw score
-        return {0, 1};
+            return (color == Color::WHITE) ? SearchResult {NEG_INFINITY, 1} : SearchResult {POS_INFINITY,1};
+        } 
+        return SearchResult {0, 1}; // Draw score
     }
 
-    // Threefold rep
-    if (hash_t::is_threefold_repetition(board)) {
-        return {0, 1};
-    }
-    int nodes      = 1;
+    int nodes = 1;
     int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
     // Testing the time

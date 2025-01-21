@@ -686,6 +686,47 @@ void run_speed_test_suite() {
     cout << "\nFinal average NPS: " << fixed << setprecision(0) << overall_nps << "\n";
 }
 
+void run_speed_test_negamax() {
+    vector<pair<string, int>> test_positions = {
+        {"8/8/8/K2k/4ppkR/8/8/8 w - - 0 1", 7},                            // end game position
+        {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6},             // starting position
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 6}, // mid game position
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 6},                            // end game position
+    
+    };
+
+    auto suite_start     = chrono::high_resolution_clock::now();
+
+    for (const auto& [fen, max_depth] : test_positions) {
+        bitboard_t board;
+        board.initialize_board_from_fen(fen);
+        cout << "\nRunning speed test for position:\n";
+        board.pretty_print_board();
+        uint64_t position_nodes = 0;
+        auto position_start     = chrono::high_resolution_clock::now();
+
+        cout << "\n Moves at depth 1 for color: " << moves::generate_all_moves_for_color(board, board.active_color).count + moves::generate_all_moves_for_color(board, !board.active_color).count << "\n";
+
+        for (int depth = 1; depth <= max_depth; depth++) {
+            auto depth_start    = chrono::high_resolution_clock::now();
+            auto best_move = engine::get_best_move(board, depth, board.active_color);
+            auto depth_end      = chrono::high_resolution_clock::now();
+            auto depth_duration = chrono::duration_cast<chrono::milliseconds>(depth_end - depth_start);
+
+            cout << "Depth " << depth << ": "
+                 << depth_duration.count() << "ms"
+                 << "\n";
+        }
+
+        auto position_end      = chrono::high_resolution_clock::now();
+        auto position_duration = chrono::duration_cast<chrono::milliseconds>(position_end - position_start);
+    }
+
+    auto suite_end      = chrono::high_resolution_clock::now();
+    auto suite_duration = chrono::duration_cast<chrono::milliseconds>(suite_end - suite_start);
+}
+
+
 void test_evaluation() {
     // Test 1: Basic piece values
     bitboard_t board;
