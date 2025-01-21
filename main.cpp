@@ -56,7 +56,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
         t = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
         if (duration > 9500) {
-            cout << depth-1 << std::endl;
             break;
         }
         best_move_return = engine::get_best_move(bitboard, depth, color_to_move).first;        
@@ -64,7 +63,6 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
 
     string best_move_str      = encode_move(bitboard_move_to_coordinate_move(unique_best_move));
     write_move_to_output_file(&output_file_name, &best_move_str);
-    cout << duration << std::endl;
     return 0;
 }
 
