@@ -18,11 +18,21 @@ struct SearchResult {
 };
 
 SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
+    
+    
     if (depth == 0) {
         return {eval::evaluate_position(board), 1}; 
     }
 
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
+
+    if (possible_moves.count == 0) {
+        if (moves::is_in_check(board, color)) {
+            return (color == Color::WHITE) ? SearchResult {NEG_INFINITY, 1} : SearchResult {POS_INFINITY,1};
+        } 
+        return SearchResult {0, 1}; // Draw score
+    }
+
     int nodes = 1;
     int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
