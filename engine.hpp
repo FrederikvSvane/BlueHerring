@@ -36,7 +36,7 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
 
     if (possible_moves.count == 0) {
         if (moves::is_in_check(board, color)) {
-            return (color == Color::WHITE) ? SearchResult {NEG_INFINITY, 1} : SearchResult {POS_INFINITY,1};
+            return {color == Color::WHITE ? POS_INFINITY : NEG_INFINITY, 1};
         } 
         return SearchResult {0, 1}; // Draw score
     }
