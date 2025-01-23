@@ -13,7 +13,7 @@
 extern chrono::high_resolution_clock::time_point t0;
 extern chrono::high_resolution_clock::time_point t;
 extern long duration;
-const long time_limit = 2000; // In milliseconds, ie 3000ms = 3s
+const long time_limit = 9500; // In milliseconds, ie 3000ms = 3s
 
 extern bitboard_move_t unique_best_move;
 
