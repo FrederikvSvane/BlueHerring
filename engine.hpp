@@ -13,7 +13,7 @@
 extern chrono::high_resolution_clock::time_point t0;
 extern chrono::high_resolution_clock::time_point t;
 extern long duration;
-const long time_limit = 9500; // In milliseconds, ie 3000ms = 3s
+const long time_limit = 2000; // In milliseconds, ie 3000ms = 3s
 
 extern bitboard_move_t unique_best_move;
 
@@ -30,10 +30,14 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
     if (depth == 0) {
         return {eval::evaluate_position(board), 1};
     }
+    // Threefold rep
+    if (hash_t::is_threefold_repetition(board)) {
+        return {0, 1};
+    }
 
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
-    int nodes      = 1;
-    int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
+    int nodes                  = 1;
+    int best_score             = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
     // Testing the time
     t        = chrono::high_resolution_clock::now();
