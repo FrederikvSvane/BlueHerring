@@ -4,15 +4,16 @@
 #include <string.h>
 
 #include "eval.hpp"
+#include "hash.hpp"
 #include "move_t.hpp"
 #include "moves.hpp"
 #include "piece_t.hpp"
-#include "hash.hpp"
 #include <chrono>
 
-extern std::chrono::_V2::system_clock::time_point t0;
-extern std::chrono::_V2::system_clock::time_point t;
-extern std::chrono::_V2::system_clock::rep duration;
+extern chrono::high_resolution_clock::time_point t0;
+extern chrono::high_resolution_clock::time_point t;
+extern long duration;
+const long time_limit = 9500; // In milliseconds, ie 3000ms = 3s
 
 extern bitboard_move_t unique_best_move;
 
@@ -26,28 +27,18 @@ struct SearchResult {
 };
 
 SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
-    
-    
     if (depth == 0) {
         return {eval::evaluate_position(board), 1};
     }
 
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
-
-    if (possible_moves.count == 0) {
-        if (moves::is_in_check(board, color)) {
-            return {color == Color::WHITE ? POS_INFINITY : NEG_INFINITY, 1};
-        } 
-        return SearchResult {0, 1}; // Draw score
-    }
-
-    int nodes = 1;
+    int nodes      = 1;
     int best_score = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
     // Testing the time
-    t = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
-    if (duration > 9500) {
+    t        = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::milliseconds>(t - t0).count();
+    if (duration > time_limit) {
         return {best_score, nodes};
     }
 
@@ -57,11 +48,11 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
         nodes += result.nodes;
 
         if (color == Color::WHITE) {
-            best_score = std::max(best_score, result.score);
-            alpha      = std::max(alpha, result.score);
+            best_score = max(best_score, result.score);
+            alpha      = max(alpha, result.score);
         } else {
-            best_score = std::min(best_score, result.score);
-            beta       = std::min(beta, result.score);
+            best_score = min(best_score, result.score);
+            beta       = min(beta, result.score);
         }
 
         moves::undo_move(board, possible_moves.moves[i], cap_piece);
@@ -74,11 +65,11 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
     return {best_score, nodes};
 }
 
-std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int depth, Color color) {
+pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int depth, Color color) {
     move_list_t possible_moves = moves::generate_all_moves_for_color(board, color);
 
     if (possible_moves.count == 0) {
-        throw std::runtime_error("No legal moves available");
+        throw runtime_error("No legal moves available");
     }
 
     bitboard_move_t best_move = possible_moves.moves[0];
@@ -87,9 +78,9 @@ std::pair<bitboard_move_t, SearchResult> get_best_move(bitboard_t& board, int de
     for (int i = 0; i < possible_moves.count; i++) {
 
         // Testing the time
-        t = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
-        if (duration > 9500) {
+        t        = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::milliseconds>(t - t0).count();
+        if (duration > time_limit) {
             return {best_move, best_result};
         }
 

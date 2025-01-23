@@ -1,5 +1,4 @@
 #include "board_t.hpp"
-#include "chrono"
 #include "engine.hpp"
 #include "eval.hpp"
 #include "file_util.hpp"
@@ -9,13 +8,13 @@
 #include <unistd.h>
 #include <chrono>
 
-std::chrono::_V2::system_clock::time_point t0 = std::chrono::high_resolution_clock::now();
-std::chrono::_V2::system_clock::time_point t = std::chrono::high_resolution_clock::now();
-std::chrono::_V2::system_clock::rep duration; // std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count()
+chrono::high_resolution_clock::time_point t0 = chrono::high_resolution_clock::now();
+chrono::high_resolution_clock::time_point t;
+long duration;
 
 bitboard_move_t unique_best_move;
 
-int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.csv {std::locale::global(std::locale("en_US.UTF-8")); // To enable printing of unicode characters}
+int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.csv {locale::global(locale("en_US.UTF-8")); // To enable printing of unicode characters}
 {
     if (argc != 5) {
         printf("Wrong input size!, %i", argc);
@@ -53,9 +52,9 @@ int main(int argc, char const* argv[]) // ./BlueHerring -H history.csv -m move.c
 
     for (int depth = 5; depth < 100; depth++) {
         // Testing the time
-        t = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count();
-        if (duration > 9500) {
+        t = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::milliseconds>(t - t0).count();
+        if (duration > time_limit) {
             break;
         }
         best_move_return = engine::get_best_move(bitboard, depth, color_to_move).first;        
