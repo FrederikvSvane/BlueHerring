@@ -27,6 +27,7 @@ struct SearchResult {
 };
 
 SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color color) {
+
     if (depth == 0) {
         return {eval::evaluate_position(board), 1};
     }
@@ -39,12 +40,16 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
     int nodes                  = 1;
     int best_score             = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
+    if (possible_moves.count == 0) {
+        return {eval::evaluate_position(board), 1};
+    }
+
     // Testing the time
     t        = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(t - t0).count();
     if (duration > time_limit) {
         return {best_score, nodes};
-    }
+    }   
 
     for (int i = 0; i < possible_moves.count; i++) {
         piece_t cap_piece   = moves::make_move(board, possible_moves.moves[i]);

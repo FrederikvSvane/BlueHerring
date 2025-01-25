@@ -23,3 +23,8 @@
 
 ## Week 6
 - Got working on implementing quiescence search for our evaluation
+
+## Week 7
+- Implemented the timer for our engine, using chrono.
+- The engine first computes (almost-instantaneously) the best move at depth 2, then tries to run depths 5, 6, ... but will always exit and return the best move computed so far when the global timer reaches 9.5s
+- Did quite a lot of playing, both using the referee program and against Stockfish through our Lichess bot, to test the engine before submission
