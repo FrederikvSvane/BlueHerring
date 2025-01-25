@@ -40,10 +40,6 @@ SearchResult negamax(bitboard_t& board, int depth, int alpha, int beta, Color co
     int nodes                  = 1;
     int best_score             = (color == Color::WHITE) ? NEG_INFINITY : POS_INFINITY;
 
-    if (possible_moves.count == 0) {
-        return {eval::evaluate_position(board), 1};
-    }
-
     // Testing the time
     t        = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(t - t0).count();
