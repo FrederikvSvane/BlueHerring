@@ -1,24 +1,15 @@
-# BlueHerring: A Command Line Interface (CLI) Chess Bot
+# Description
 
-Written in C++ for the course CSC_2F001_EP: Object-oriented Programming in C++, at École Polytechnique
+BlueHerring is not a Red Herring. It's a deterministic CLI chess engine that honors the methodologies of the fellow oceanic-themed chess bot Stockfish. 
+It integrates nicely with the Lichess UI. Granted that you create your own Lichess bot api key.
 
+## Current Elo
 
-## Description
-
-This is an informative description of the project that makes it seem very interesting
-
-
-## Getting started
+~2000
 
 ### Dependencies
 
-None so far
-
-
-
-### Installing
-
-Clone this repository to your machine
+None
 
 
 ### Executing program
@@ -42,17 +33,6 @@ For example :
 ```
 chessGame -W ./BlueHerring -B chessRandomPlayer
 ```
-
-
-# Authors
-
-Charbonneau, Simon (simon.charbonneau@polytechnique.edu)
-
-Krause, Antonia Gerlach (antonia.gerlach-krause@polytechnique.edu)
-
-Losel (sherab-losel.matos@polytechnique.edu)
-
-Svane, Frederik (frederik.svane@polytechnique.edu)
 
 
 # Referencing
