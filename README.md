@@ -1,6 +1,6 @@
 # Description
 
-BlueHerring is not a Red Herring. It's a deterministic CLI chess engine that honors the methodologies of the fellow oceanic-themed chess bot Stockfish. 
+BlueHerring is not a Red Herring. It's a deterministic CLI chess engine that honors the methodologies of the fellow poisson-themed chess bot "Stockfish". 
 It integrates nicely with the Lichess UI. Granted that you create your own Lichess bot api key.
 
 ## Current Elo
